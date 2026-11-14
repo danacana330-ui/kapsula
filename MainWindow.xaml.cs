@@ -538,12 +538,33 @@ public partial class MainWindow : Window
         PanelHost.Content = panel;
         PanelHost.Visibility = Visibility.Visible;
         HomeView.Visibility = Visibility.Collapsed;
+
+        // панель не появляется рывком: короткое проявление снизу вверх
+        if (PanelHost.RenderTransform is not TranslateTransform slide)
+        {
+            slide = new TranslateTransform();
+            PanelHost.RenderTransform = slide;
+        }
+
+        PanelHost.BeginAnimation(OpacityProperty, null);
+        PanelHost.Opacity = 0;
+        PanelHost.BeginAnimation(OpacityProperty, new DoubleAnimation(1, TimeSpan.FromMilliseconds(200))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+        });
+        slide.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(10, 0, TimeSpan.FromMilliseconds(240))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+        });
+
         Expand();
         Activate();
     }
 
     private void ClosePanel()
     {
+        PanelHost.BeginAnimation(OpacityProperty, null);
+        PanelHost.Opacity = 1;
         PanelHost.Content = null;
         PanelHost.Visibility = Visibility.Collapsed;
         HomeView.Visibility = Visibility.Visible;
