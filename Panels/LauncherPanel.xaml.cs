@@ -17,6 +17,9 @@ public partial class LauncherPanel : UserControl
         Loaded += (_, _) =>
         {
             _launcher.BuildIndex();
+            var items = _launcher.Search("").ToList();
+            Results.ItemsSource = items;
+            if (items.Count > 0) Results.SelectedIndex = 0;
             Query.Focus();
         };
     }

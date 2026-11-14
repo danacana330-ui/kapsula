@@ -34,26 +34,78 @@ public sealed class LauncherService
         };
 
         foreach (var root in roots.Where(Directory.Exists))
+            AddShortcuts(root);
+    }
+
+    /// <summary>
+    /// Обход дерева «Пуска» по одной папке: в меню бывают закрытые для чтения каталоги
+    /// (например, «Программы»), из-за которых Directory.EnumerateFiles(AllDirectories) падает
+    /// целиком и список приложений остаётся пустым.
+    /// </summary>
+    private void AddShortcuts(string root)
+    {
+        var pending = new Stack<string>();
+        pending.Push(root);
+
+        while (pending.Count > 0)
         {
+            var dir = pending.Pop();
+
+            string[] files;
             try
             {
-                foreach (var lnk in Directory.EnumerateFiles(root, "*.lnk", SearchOption.AllDirectories))
-                {
-                    var name = Path.GetFileNameWithoutExtension(lnk);
-                    if (name.Contains("uninstall", StringComparison.OrdinalIgnoreCase)) continue;
-                    _apps.Add(new LaunchItem { Title = name, Path = lnk, Kind = "app" });
-                }
+                files = Directory.GetFiles(dir, "*.lnk");
             }
             catch
             {
+                continue;
             }
+
+            foreach (var lnk in files)
+            {
+                var name = Path.GetFileNameWithoutExtension(lnk);
+                if (!IsAppName(name)) continue;
+                if (_apps.Any(a => a.Title.Equals(name, StringComparison.OrdinalIgnoreCase))) continue;
+                _apps.Add(new LaunchItem { Title = name, Path = lnk, Kind = "app" });
+            }
+
+            string[] subdirs;
+            try
+            {
+                subdirs = Directory.GetDirectories(dir);
+            }
+            catch
+            {
+                continue;
+            }
+
+            foreach (var sub in subdirs) pending.Push(sub);
         }
+    }
+
+    /// <summary>Служебные ярлыки (удаление, справка, документация) в списке запуска не нужны.</summary>
+    private static bool IsAppName(string name)
+    {
+        string[] skip =
+        {
+            "uninstall", "деинсталл", "удалить", "удаление", "help", "справка",
+            "документац", "руководств", "readme", "changelog", "лицензи",
+            "запустить", "журнал телеметрии",
+        };
+        return !skip.Any(word => name.Contains(word, StringComparison.OrdinalIgnoreCase));
     }
 
     public IEnumerable<LaunchItem> Search(string query, int limit = 8)
     {
         query = query.Trim();
-        if (query.Length == 0) return Array.Empty<LaunchItem>();
+        if (query.Length == 0)
+        {
+            // пустой запрос — показываем приложения, чтобы панель не открывалась пустой
+            return _apps
+                .OrderBy(a => a.Title.Length)
+                .ThenBy(a => a.Title, StringComparer.CurrentCultureIgnoreCase)
+                .Take(limit);
+        }
 
         var results = new List<LaunchItem>();
 
