@@ -1,0 +1,287 @@
+﻿<Window x:Class="Kapsula.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:local="clr-namespace:Kapsula"
+        mc:Ignorable="d"
+        Title="Kapsula"
+        Width="920" Height="640"
+        WindowStyle="None" AllowsTransparency="True" Background="{x:Null}"
+        Topmost="True" ShowInTaskbar="False" ShowActivated="False"
+        ResizeMode="NoResize" UseLayoutRounding="True" SnapsToDevicePixels="True"
+        FontFamily="{x:Static local:Theme.Font}"
+        d:DesignHeight="640" d:DesignWidth="920">
+
+    <Grid x:Name="RootScale" VerticalAlignment="Top" HorizontalAlignment="Center">
+        <Grid.LayoutTransform>
+            <ScaleTransform x:Name="UiScale" ScaleX="1" ScaleY="1"/>
+        </Grid.LayoutTransform>
+        <Border x:Name="Capsule"
+                Width="330" Height="46"
+                CornerRadius="23"
+                Background="{x:Static local:Theme.BgBrush}"
+                BorderBrush="{x:Static local:Theme.StrokeBrush}"
+                BorderThickness="1"
+                MouseEnter="OnCapsuleEnter"
+                MouseLeave="OnCapsuleLeave"
+                MouseLeftButtonDown="OnCapsuleDrag"
+                MouseMove="OnCapsuleMove"
+                MouseLeftButtonUp="OnCapsuleUp"
+                AllowDrop="True" Drop="OnWindowDrop" DragOver="OnWindowDragOver">
+            <Border.Effect>
+                <DropShadowEffect x:Name="CapsuleShadow" BlurRadius="26" ShadowDepth="7" Direction="270" Opacity="0.5" Color="#000000"/>
+            </Border.Effect>
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- жидкий край: волна по нижней кромке под музыку -->
+                <Canvas x:Name="LiquidLayer" Grid.RowSpan="2" IsHitTestVisible="False" ClipToBounds="True">
+                    <Path x:Name="LiquidEdge" Opacity="0"
+                          Fill="{x:Static local:Theme.AccentBrush}"/>
+                </Canvas>
+
+                <!-- ── строка капсулы (когда играет музыка) ── -->
+                <Grid x:Name="HeaderRow" Grid.Row="0" Height="46" Margin="6,0,8,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" x:Name="ArtPill" Width="34" Height="34" CornerRadius="17"
+                            Background="{x:Static local:Theme.AccentGradient}">
+                        <TextBlock x:Name="ArtFallback" Text="&#xE8D6;" FontFamily="Segoe MDL2 Assets" FontSize="15"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Foreground="#2A1A0E"/>
+                    </Border>
+
+                    <StackPanel Grid.Column="1" Margin="10,0,10,0" VerticalAlignment="Center">
+                        <TextBlock x:Name="TitleText" Text="Ничего не играет"
+                                   FontSize="12.5" FontWeight="SemiBold"
+                                   Foreground="{x:Static local:Theme.TextBrush}"
+                                   TextTrimming="CharacterEllipsis"/>
+                        <TextBlock x:Name="ArtistText" Text="включи музыку — появится здесь"
+                                   FontSize="10.5" Margin="0,1,0,0"
+                                   Foreground="{x:Static local:Theme.DimBrush}"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+
+                    <local:Mascot Grid.Column="2" x:Name="MusicMascot" Width="34" Height="28"
+                                  Margin="0,0,4,0" VerticalAlignment="Center"/>
+
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Ellipse x:Name="MicDot" Width="5" Height="5" Fill="#FF7A6B"
+                                 Margin="0,0,3,0" VerticalAlignment="Center" Visibility="Collapsed"
+                                 ToolTip="Микрофон используется"/>
+                        <Ellipse x:Name="CamDot" Width="5" Height="5" Fill="#6BB8FF"
+                                 Margin="0,0,7,0" VerticalAlignment="Center" Visibility="Collapsed"
+                                 ToolTip="Камера используется"/>
+                        <TextBlock x:Name="VolumeIcon" Text="&#xE767;" FontFamily="Segoe MDL2 Assets"
+                                   FontSize="12" Foreground="{x:Static local:Theme.DimBrush}"
+                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock x:Name="ClockText" Text="00:00"
+                                   FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{x:Static local:Theme.TextBrush}"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <Button Grid.Column="4" Style="{StaticResource IconButton}" Click="OnSettingsClick"
+                            Opacity="0.5" ToolTip="Настройки" Width="26" Height="26">
+                        <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="11"/>
+                    </Button>
+
+                    <Button Grid.Column="5" x:Name="PinButton" Style="{StaticResource IconButton}"
+                            Click="OnPinClick" Opacity="0.45" ToolTip="Закрепить" Width="26" Height="26">
+                        <TextBlock Text="&#xE718;" FontFamily="Segoe MDL2 Assets" FontSize="11"/>
+                    </Button>
+                </Grid>
+
+                <!-- ── полоска-шторка (когда музыки нет) ── -->
+                <Grid x:Name="IdleBar" Grid.RowSpan="2" Margin="14,0,14,0"
+                      VerticalAlignment="Center" Visibility="Collapsed">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
+                                VerticalAlignment="Center">
+                        <TextBlock x:Name="IdleTime" Text="00:00"
+                                   FontSize="13" FontWeight="SemiBold" MinWidth="46"
+                                   TextAlignment="Left"
+                                   Foreground="{x:Static local:Theme.TextBrush}"
+                                   VerticalAlignment="Center"/>
+
+                        <local:Mascot x:Name="IdleMascot" Width="112" Height="38" Margin="10,0"
+                                      Wander="28"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" MinWidth="48">
+                            <Ellipse x:Name="IdleMicDot" Width="5" Height="5" Fill="#FF7A6B"
+                                     Margin="0,0,4,0" VerticalAlignment="Center" Visibility="Collapsed"/>
+                            <Ellipse x:Name="IdleCamDot" Width="5" Height="5" Fill="#6BB8FF"
+                                     Margin="0,0,6,0" VerticalAlignment="Center" Visibility="Collapsed"/>
+                            <local:WeatherIcon x:Name="IdleWeatherIcon" Kind="cloud"
+                                               Width="14" Height="14"
+                                               VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock x:Name="IdleTemp" Text="—" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{x:Static local:Theme.TextBrush}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+
+                <!-- ── раскрытая часть ── -->
+                <Grid x:Name="Body" Grid.Row="1" Margin="12,0,12,12" Visibility="Collapsed">
+
+                    <Grid x:Name="HomeView">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="316"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- карточка трека -->
+                        <Border Grid.Column="0" CornerRadius="18" Background="{x:Static local:Theme.CardBrush}"
+                                BorderBrush="{x:Static local:Theme.StrokeBrush}" BorderThickness="1" Padding="16">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <Border Grid.Row="0" x:Name="ArtBig" Height="176" CornerRadius="20"
+                                        Background="{x:Static local:Theme.AccentGradient}">
+                                    <TextBlock x:Name="ArtBigFallback" Text="&#xE8D6;" FontFamily="Segoe MDL2 Assets" FontSize="48"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               Foreground="#33FFFFFF"/>
+                                </Border>
+
+                                <StackPanel Grid.Row="1" Margin="0,14,0,0">
+                                    <TextBlock x:Name="TitleBig" Text="Ничего не играет"
+                                               FontSize="16" FontWeight="Bold"
+                                               Foreground="{x:Static local:Theme.TextBrush}"
+                                               TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock x:Name="ArtistBig" Text="включи музыку"
+                                               FontSize="12" Margin="0,3,0,0"
+                                               Foreground="{x:Static local:Theme.DimBrush}"
+                                               TextTrimming="CharacterEllipsis"/>
+                                    <Border Height="4" CornerRadius="2" Background="#1FFFFFFF" Margin="0,14,0,0">
+                                        <Border x:Name="ProgressFill" Width="0" HorizontalAlignment="Left"
+                                                CornerRadius="2" Background="{x:Static local:Theme.AccentBrush}"/>
+                                    </Border>
+                                </StackPanel>
+
+                                <Grid Grid.Row="2" Margin="0,12,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Button Grid.Column="0" Style="{StaticResource IconButton}" Click="OnPrevious"
+                                            HorizontalAlignment="Right" Margin="0,0,10,0" ToolTip="Предыдущий">
+                                        <TextBlock Text="&#xE892;" FontFamily="Segoe MDL2 Assets" FontSize="15"/>
+                                    </Button>
+                                    <Border Grid.Column="1" Width="46" Height="46" CornerRadius="23"
+                                            Background="{x:Static local:Theme.AccentGradient}">
+                                        <Button Style="{StaticResource PlainButton}" Click="OnPlayPause" ToolTip="Играть / пауза">
+                                            <TextBlock x:Name="PlayPauseText" Text="&#xE768;" FontFamily="Segoe MDL2 Assets"
+                                                       FontSize="16" Foreground="#2A1A0E"/>
+                                        </Button>
+                                    </Border>
+                                    <Button Grid.Column="2" Style="{StaticResource IconButton}" Click="OnNext"
+                                            HorizontalAlignment="Left" Margin="10,0,0,0" ToolTip="Следующий">
+                                        <TextBlock Text="&#xE893;" FontFamily="Segoe MDL2 Assets" FontSize="15"/>
+                                    </Button>
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <!-- правая колонка -->
+                        <Grid Grid.Column="1" Margin="12,0,0,0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- карточка маскота -->
+                            <Border Grid.Row="0" CornerRadius="18" Padding="14,10"
+                                    Background="{x:Static local:Theme.CardBrush}"
+                                    BorderBrush="{x:Static local:Theme.StrokeBrush}" BorderThickness="1">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <local:Mascot Grid.Column="0" x:Name="BigMascot" Width="42" Height="32"
+                                                  VerticalAlignment="Center"/>
+
+                                    <StackPanel Grid.Column="1" Margin="12,0,10,0" VerticalAlignment="Center">
+                                        <TextBlock x:Name="MascotPhrase" Text="привет"
+                                                   FontSize="12.5" Foreground="{x:Static local:Theme.TextBrush}"/>
+                                        <TextBlock x:Name="MascotSub" Text="я живу наверху экрана"
+                                                   FontSize="10.5" Margin="0,2,0,0"
+                                                   Foreground="{x:Static local:Theme.DimBrush}"/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                        <TextBlock x:Name="MascotTime" Text="00:00" FontSize="15" FontWeight="Bold"
+                                                   HorizontalAlignment="Right"
+                                                   Foreground="{x:Static local:Theme.TextBrush}"/>
+                                        <TextBlock x:Name="MascotDate" Text="" FontSize="10"
+                                                   HorizontalAlignment="Right" Margin="0,1,0,0"
+                                                   Foreground="{x:Static local:Theme.DimBrush}"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <!-- громкость -->
+                            <Border Grid.Row="1" CornerRadius="18" Padding="16,14" Margin="0,12,0,0"
+                                    Background="{x:Static local:Theme.CardBrush}"
+                                    BorderBrush="{x:Static local:Theme.StrokeBrush}" BorderThickness="1">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Button Grid.Column="0" Style="{StaticResource IconButton}" Click="OnVolumeDown" ToolTip="Тише">
+                                        <TextBlock Text="&#xE767;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
+                                    </Button>
+
+                                    <Grid Grid.Column="1" x:Name="VolumeTrack" Height="26" Margin="10,0"
+                                          MouseLeftButtonDown="OnVolumeStartDrag" MouseMove="OnVolumeDrag"
+                                          MouseLeftButtonUp="OnVolumeEndDrag" Cursor="Hand">
+                                        <Border Height="6" CornerRadius="3" Background="#1FFFFFFF" VerticalAlignment="Center"/>
+                                        <Border Height="6" CornerRadius="3" Background="{x:Static local:Theme.AccentGradient}"
+                                                VerticalAlignment="Center" HorizontalAlignment="Left" x:Name="VolumeFillTrack" Width="100"/>
+                                    </Grid>
+
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock x:Name="VolumePercent" Text="100%" FontSize="11.5"
+                                                   Foreground="{x:Static local:Theme.DimBrush}" Width="34"
+                                                   TextAlignment="Right"/>
+                                        <Button Style="{StaticResource IconButton}" Click="OnVolumeUp" ToolTip="Громче" Margin="6,0,0,0">
+                                            <TextBlock Text="&#xE767;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <UniformGrid x:Name="TileGrid" Grid.Row="2" Columns="3" Margin="0,12,0,0"/>
+                        </Grid>
+                    </Grid>
+
+                    <ContentControl x:Name="PanelHost" Visibility="Collapsed"/>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

@@ -1,0 +1,65 @@
+<UserControl x:Class="Kapsula.Panels.ShelfPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Kapsula"
+             FontFamily="{x:Static local:Theme.Font}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Button Style="{StaticResource IconButton}" Click="OnBack" ToolTip="Назад">
+                <TextBlock Text="&#xE72B;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
+            </Button>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="4,0,0,0">
+                <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                           Foreground="{x:Static local:Theme.AccentBrush}" VerticalAlignment="Center"/>
+                <TextBlock Text="Полка" FontSize="15" FontWeight="SemiBold" Margin="8,0,0,0"
+                           Foreground="{x:Static local:Theme.TextBrush}"/>
+            </StackPanel>
+            <Button Grid.Column="2" Style="{StaticResource GhostButton}" Content="Выбрать файлы" Click="OnBrowse"/>
+        </Grid>
+
+        <ListBox Grid.Row="1" x:Name="List" Style="{StaticResource PlainList}" AllowDrop="True"
+                 Drop="OnDrop" DragOver="OnDragOver" MouseDoubleClick="OnOpen">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="&#xE8A5;" FontFamily="Segoe MDL2 Assets" FontSize="15"
+                                   Foreground="{x:Static local:Theme.AccentBrush}" VerticalAlignment="Center"
+                                   Margin="0,0,10,0"/>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Name}" FontSize="12.5"
+                                       Foreground="{x:Static local:Theme.TextBrush}"
+                                       TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Text="{Binding Info}" FontSize="10.5" Margin="0,2,0,0"
+                                       Foreground="{x:Static local:Theme.DimBrush}"/>
+                        </StackPanel>
+                        <Button Grid.Column="2" Style="{StaticResource IconButton}" Click="OnRemove"
+                                Tag="{Binding}" ToolTip="Убрать с полки">
+                            <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="10"/>
+                        </Button>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <Border Grid.Row="2" CornerRadius="12" Background="#0DFFFFFF" Padding="12,10" Margin="0,10,0,0">
+            <TextBlock Text="Перетащи файлы сюда — они останутся под рукой, пока не уберёшь."
+                       FontSize="11" TextWrapping="Wrap" Foreground="{x:Static local:Theme.DimBrush}"/>
+        </Border>
+    </Grid>
+</UserControl>

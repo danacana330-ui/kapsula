@@ -1,0 +1,88 @@
+<UserControl x:Class="Kapsula.WeatherIcon"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Kapsula"
+             IsHitTestVisible="False">
+    <Viewbox Stretch="Uniform">
+        <Canvas x:Name="Root" Width="24" Height="24">
+
+            <!-- солнце -->
+            <Canvas x:Name="SunGroup">
+                <Ellipse Canvas.Left="6.9" Canvas.Top="6.9" Width="10.2" Height="10.2"
+                         Fill="{x:Static local:Theme.AccentBrush}"/>
+                <Line X1="12" Y1="1.6" X2="12" Y2="4.3" Stroke="{x:Static local:Theme.AccentBrush}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                <Line X1="12" Y1="19.7" X2="12" Y2="22.4" Stroke="{x:Static local:Theme.AccentBrush}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                <Line X1="1.6" Y1="12" X2="4.3" Y2="12" Stroke="{x:Static local:Theme.AccentBrush}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                <Line X1="19.7" Y1="12" X2="22.4" Y2="12" Stroke="{x:Static local:Theme.AccentBrush}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                <Line X1="4.7" Y1="4.7" X2="6.6" Y2="6.6" Stroke="{x:Static local:Theme.AccentBrush}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                <Line X1="17.4" Y1="17.4" X2="19.3" Y2="19.3" Stroke="{x:Static local:Theme.AccentBrush}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                <Line X1="19.3" Y1="4.7" X2="17.4" Y2="6.6" Stroke="{x:Static local:Theme.AccentBrush}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                <Line X1="6.6" Y1="17.4" X2="4.7" Y2="19.3" Stroke="{x:Static local:Theme.AccentBrush}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+            </Canvas>
+
+            <!-- облако -->
+            <Canvas x:Name="CloudGroup">
+                <Rectangle Canvas.Left="3.2" Canvas.Top="11.2" Width="17.4" Height="7"
+                           RadiusX="3.5" RadiusY="3.5" Fill="{x:Static local:Theme.AccentBrush}"/>
+                <Ellipse Canvas.Left="3.4" Canvas.Top="7.6" Width="9.2" Height="9.2"
+                         Fill="{x:Static local:Theme.AccentBrush}"/>
+                <Ellipse Canvas.Left="7.6" Canvas.Top="4.4" Width="11" Height="11"
+                         Fill="{x:Static local:Theme.AccentBrush}"/>
+                <Ellipse Canvas.Left="13.8" Canvas.Top="7.8" Width="8.4" Height="8.4"
+                         Fill="{x:Static local:Theme.AccentBrush}"/>
+            </Canvas>
+
+            <!-- дождь -->
+            <Canvas x:Name="RainGroup">
+                <Line X1="8.4" Y1="19.4" X2="7.4" Y2="22.4" Stroke="{x:Static local:Theme.AccentBrush}" StrokeThickness="1.7" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                <Line X1="12.4" Y1="19.4" X2="11.4" Y2="22.4" Stroke="{x:Static local:Theme.AccentBrush}" StrokeThickness="1.7" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                <Line X1="16.4" Y1="19.4" X2="15.4" Y2="22.4" Stroke="{x:Static local:Theme.AccentBrush}" StrokeThickness="1.7" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+            </Canvas>
+
+            <!-- снег -->
+            <Canvas x:Name="SnowGroup">
+                <Ellipse Canvas.Left="6.6" Canvas.Top="20" Width="2.4" Height="2.4" Fill="{x:Static local:Theme.AccentBrush}"/>
+                <Ellipse Canvas.Left="10.8" Canvas.Top="21.4" Width="2.4" Height="2.4" Fill="{x:Static local:Theme.AccentBrush}"/>
+                <Ellipse Canvas.Left="15" Canvas.Top="20" Width="2.4" Height="2.4" Fill="{x:Static local:Theme.AccentBrush}"/>
+            </Canvas>
+
+            <!-- гроза -->
+            <Canvas x:Name="ThunderGroup">
+                <Polygon Points="13.6,17.4 9.6,22.6 12.1,22.6 11.2,24.4 15.6,19.4 13.1,19.4"
+                         Fill="{x:Static local:Theme.AccentBrush}"/>
+            </Canvas>
+
+            <!-- туман -->
+            <Canvas x:Name="FogGroup">
+                <Line X1="4.4" Y1="7.6" X2="19.6" Y2="7.6" Stroke="{x:Static local:Theme.AccentBrush}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                <Line X1="2.8" Y1="12.6" X2="17.6" Y2="12.6" Stroke="{x:Static local:Theme.AccentBrush}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                <Line X1="6.4" Y1="17.6" X2="21.2" Y2="17.6" Stroke="{x:Static local:Theme.AccentBrush}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+            </Canvas>
+
+            <!-- облачно с прояснением: маленькое солнце + облако -->
+            <Canvas x:Name="PartlyGroup">
+                <Ellipse Canvas.Left="1.4" Canvas.Top="1.4" Width="7.6" Height="7.6"
+                         Fill="{x:Static local:Theme.AccentBrush}"/>
+                <Rectangle Canvas.Left="5.6" Canvas.Top="12.6" Width="16.4" Height="6.4"
+                           RadiusX="3.2" RadiusY="3.2" Fill="{x:Static local:Theme.AccentBrush}"/>
+                <Ellipse Canvas.Left="6" Canvas.Top="9.4" Width="8.4" Height="8.4"
+                         Fill="{x:Static local:Theme.AccentBrush}"/>
+                <Ellipse Canvas.Left="10.2" Canvas.Top="7.4" Width="9.6" Height="9.6"
+                         Fill="{x:Static local:Theme.AccentBrush}"/>
+                <Ellipse Canvas.Left="15.6" Canvas.Top="10.2" Width="7.2" Height="7.2"
+                         Fill="{x:Static local:Theme.AccentBrush}"/>
+            </Canvas>
+
+            <!-- часы для таймера -->
+            <Canvas x:Name="ClockGroup">
+                <Ellipse Canvas.Left="2.6" Canvas.Top="2.6" Width="18.8" Height="18.8"
+                         Stroke="{x:Static local:Theme.AccentBrush}" StrokeThickness="2"/>
+                <Line X1="12" Y1="7.2" X2="12" Y2="12.6" Stroke="{x:Static local:Theme.AccentBrush}"
+                      StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                <Line X1="12" Y1="12.6" X2="15.8" Y2="14.8" Stroke="{x:Static local:Theme.AccentBrush}"
+                      StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+            </Canvas>
+
+        </Canvas>
+    </Viewbox>
+</UserControl>

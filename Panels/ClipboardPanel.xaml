@@ -1,0 +1,77 @@
+<UserControl x:Class="Kapsula.Panels.ClipboardPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Kapsula"
+             FontFamily="{x:Static local:Theme.Font}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Button Style="{StaticResource IconButton}" Click="OnBack" ToolTip="Назад">
+                <TextBlock Text="&#xE72B;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
+            </Button>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="4,0,0,0">
+                <TextBlock Text="&#xE77F;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                           Foreground="{x:Static local:Theme.AccentBrush}" VerticalAlignment="Center"/>
+                <TextBlock Text="Буфер обмена" FontSize="15" FontWeight="SemiBold" Margin="8,0,0,0"
+                           Foreground="{x:Static local:Theme.TextBrush}"/>
+            </StackPanel>
+            <Button Grid.Column="2" Style="{StaticResource GhostButton}" Content="Очистить" Click="OnClear"/>
+        </Grid>
+
+        <TextBox Grid.Row="1" x:Name="Search" Style="{StaticResource InputBox}"
+                 TextChanged="OnSearchChanged" Margin="0,0,0,10"/>
+        <TextBlock Grid.Row="1" Text="Поиск по истории" IsHitTestVisible="False"
+                   Margin="13,0,0,10" VerticalAlignment="Center"
+                   FontSize="12.5" Foreground="{x:Static local:Theme.DimBrush}">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Text, ElementName=Search}" Value="">
+                            <Setter Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+
+        <ListBox Grid.Row="2" x:Name="List" Style="{StaticResource PlainList}"
+                 SelectionChanged="OnPick">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="{Binding Text}" TextWrapping="Wrap" MaxHeight="42"
+                                       TextTrimming="CharacterEllipsis" FontSize="12.5"
+                                       Foreground="{x:Static local:Theme.TextBrush}"/>
+                            <TextBlock Text="{Binding At, StringFormat='{}{0:HH:mm}'}" FontSize="10.5"
+                                       Margin="0,4,0,0" Foreground="{x:Static local:Theme.DimBrush}"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Style="{StaticResource IconButton}" Click="OnDelete"
+                                Tag="{Binding}" ToolTip="Удалить">
+                            <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="11"/>
+                        </Button>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <TextBlock Grid.Row="3" Text="Нажми на строку — текст скопируется обратно в буфер"
+                   FontSize="11" Foreground="{x:Static local:Theme.DimBrush}" Margin="2,8,0,0"/>
+    </Grid>
+</UserControl>
