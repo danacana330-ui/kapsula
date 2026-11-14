@@ -49,24 +49,8 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <Grid>
-                <TextBox x:Name="Input" Style="{StaticResource InputBox}" KeyDown="OnInputKey"
-                         TextChanged="OnInputChanged"/>
-                <TextBlock Text="Что записать?" IsHitTestVisible="False" Margin="13,0,0,0"
-                           VerticalAlignment="Center"
-                           FontSize="12.5" Foreground="{x:Static local:Theme.DimBrush}">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Text, ElementName=Input}" Value="">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-            </Grid>
+            <TextBox x:Name="Input" Style="{StaticResource InputBox}" KeyDown="OnInputKey"
+                     TextChanged="OnInputChanged" Tag="Что записать?"/>
             <Button Grid.Column="1" Style="{StaticResource GhostButton}" Content="Записать"
                     Click="OnAdd" Margin="8,0,0,0"/>
         </Grid>

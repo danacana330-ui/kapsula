@@ -44,7 +44,7 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Text="Модели на компьютере" FontSize="11"
+                    <TextBlock Grid.Row="0" Text="Модели" FontSize="11"
                                Foreground="{x:Static local:Theme.DimBrush}" Margin="2,0,0,8"/>
 
                     <ListBox Grid.Row="1" x:Name="ModelsList" Style="{StaticResource PlainList}"
@@ -52,10 +52,10 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel>
-                                    <TextBlock Text="{Binding Name}" FontSize="12"
+                                    <TextBlock Text="{Binding Title}" FontSize="12"
                                                Foreground="{x:Static local:Theme.TextBrush}"
                                                TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock Text="{Binding SizeText}" FontSize="10"
+                                    <TextBlock Text="{Binding Subtitle}" FontSize="10" TextWrapping="Wrap"
                                                Foreground="{x:Static local:Theme.DimBrush}"/>
                                 </StackPanel>
                             </DataTemplate>
@@ -65,25 +65,46 @@
                     <StackPanel Grid.Row="2" Margin="0,10,0,0">
                         <TextBlock x:Name="AdviceText" FontSize="10.5" TextWrapping="Wrap"
                                    Foreground="{x:Static local:Theme.DimBrush}" Margin="2,0,2,8"/>
-                        <TextBox x:Name="PullBox" Style="{StaticResource InputBox}" FontSize="11.5"/>
-                        <Button Style="{StaticResource GhostButton}" Content="Скачать модель" Click="OnPull"
-                                HorizontalAlignment="Left" Margin="0,6,0,0"/>
+                        <Button x:Name="MiniActionBtn" Style="{StaticResource GhostButton}" Content="Скачать"
+                                Click="OnMiniAction" HorizontalAlignment="Left" Visibility="Collapsed"/>
                         <ProgressBar x:Name="PullBar" Height="4" Margin="0,8,0,0" Minimum="0" Maximum="100"
                                      Foreground="{x:Static local:Theme.AccentBrush}" Background="#1AFFFFFF"
                                      BorderThickness="0" Visibility="Collapsed"/>
                         <TextBlock x:Name="PullStatus" FontSize="10" TextWrapping="Wrap" Margin="0,6,0,0"
                                    Foreground="{x:Static local:Theme.DimBrush}"/>
+                        <StackPanel x:Name="OllamaPullBlock" Margin="0,8,0,0">
+                            <TextBox x:Name="PullBox" Style="{StaticResource InputBox}" FontSize="11.5"/>
+                            <Button Style="{StaticResource GhostButton}" Content="Скачать в Ollama" Click="OnPull"
+                                    HorizontalAlignment="Left" Margin="0,6,0,0"/>
+                        </StackPanel>
                     </StackPanel>
                 </Grid>
             </Border>
 
             <Grid Grid.Column="1" Margin="12,0,0,0">
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <ScrollViewer x:Name="ChatScroll" VerticalScrollBarVisibility="Auto">
+                <Border x:Name="OllamaBanner" Visibility="Collapsed" CornerRadius="12"
+                        Background="#14FFB86B" BorderBrush="#33FFB86B" BorderThickness="1"
+                        Padding="10,7" Margin="0,0,0,8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="На компьютере есть Ollama — можно отвечать на её моделях"
+                                   FontSize="11" TextWrapping="Wrap" VerticalAlignment="Center"
+                                   Foreground="{x:Static local:Theme.TextBrush}"/>
+                        <Button Grid.Column="1" Style="{StaticResource GhostButton}" Content="Перейти"
+                                Click="OnOllamaSwitch" Margin="8,0,0,0" Padding="8,3"/>
+                    </Grid>
+                </Border>
+
+                <ScrollViewer x:Name="ChatScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto">
                     <ItemsControl x:Name="ChatList">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
@@ -107,32 +128,22 @@
                     </ItemsControl>
                 </ScrollViewer>
 
-                <Grid Grid.Row="1" Margin="0,10,0,0">
+                <Grid Grid.Row="2" Margin="0,10,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <Grid>
-                        <TextBox x:Name="Input" Style="{StaticResource InputBox}" Height="42"
-                                 AcceptsReturn="True" TextWrapping="Wrap" KeyDown="OnInputKey"
-                                 VerticalContentAlignment="Center"/>
-                        <TextBlock Text="Спроси что-нибудь — отвечает локальная модель" IsHitTestVisible="False"
-                                   Margin="13,0,0,0" VerticalAlignment="Center" FontSize="12.5"
-                                   Foreground="{x:Static local:Theme.DimBrush}">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Text, ElementName=Input}" Value="">
-                                            <Setter Property="Visibility" Value="Visible"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </Grid>
-                    <Button Grid.Column="1" Style="{StaticResource GhostButton}" Content="Отправить"
-                            Click="OnSend" Margin="8,0,0,0"/>
+                    <TextBox x:Name="Input" Style="{StaticResource InputBox}" MinHeight="42" MaxHeight="96"
+                             AcceptsReturn="True" TextWrapping="Wrap" KeyDown="OnInputKey"
+                             VerticalContentAlignment="Center"
+                             Tag="Спроси что-нибудь — отвечает локальная модель"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="8,0,0,0"
+                                VerticalAlignment="Center">
+                        <Button x:Name="StopBtn" Style="{StaticResource GhostButton}" Content="Стоп"
+                                Click="OnStop" Margin="0,0,6,0" Visibility="Collapsed"/>
+                        <Button x:Name="SendBtn" Style="{StaticResource GhostButton}" Content="Отправить"
+                                Click="OnSend"/>
+                    </StackPanel>
                 </Grid>
             </Grid>
         </Grid>

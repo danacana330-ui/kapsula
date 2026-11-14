@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.Diagnostics;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
@@ -26,6 +27,8 @@ public partial class MainWindow : Window
     private readonly RecordingService _recorder = new();
     private AppSettings _settings = App.Settings;
     private OsdWindow? _osd;
+    private SummaryStripWindow? _updateStrip;
+    private UpdateInfo? _update;
     private double _lastVolume = -1;
     private bool _lastCaps;
     private readonly DispatcherTimer _tick = new() { Interval = TimeSpan.FromMilliseconds(500) };
@@ -81,6 +84,7 @@ public partial class MainWindow : Window
         ClipboardStore.Load();
         ShelfStore.Load();
         NotesStore.Load();
+        TimerService.Restore();
         BuildTiles();
 
         _collapseTimer.Tick += (_, _) =>
@@ -133,6 +137,8 @@ public partial class MainWindow : Window
 
             _waveTimer.Tick += (_, _) => UpdateLiquidEdge();
             _waveTimer.Start();
+
+            _ = CheckUpdateLaterAsync();
         };
     }
 
@@ -447,11 +453,11 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ShowOsd(string glyph, string title, string value)
+    private void ShowOsd(string glyph, string title, string value, bool sticky = false)
     {
         if (!_settings.ShowOsd) return;
         _osd ??= new OsdWindow();
-        _osd.Show(glyph, title, value);
+        _osd.ShowOsd(glyph, title, value, sticky);
     }
 
     private async void ToggleRecording()
@@ -468,7 +474,7 @@ public partial class MainWindow : Window
             var folder = string.IsNullOrWhiteSpace(_settings.RecordFolder)
                 ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "Kapsula")
                 : _settings.RecordFolder;
-            _recorder.Start(folder);
+            _recorder.Start(folder, _settings.RecordSystemAudio);
             if (_recordLabel is not null) _recordLabel.Text = "Стоп";
             ShowOsd("\uE7C8", "Запись экрана", "идёт");
             (Application.Current as App)?.Notify("Запись экрана", "Пишу экран. Alt+R — остановить");
@@ -508,6 +514,9 @@ public partial class MainWindow : Window
                 break;
             case "record":
                 ToggleRecording();
+                break;
+            case "summary":
+                ShowSummary();
                 break;
         }
     }
@@ -564,7 +573,128 @@ public partial class MainWindow : Window
         if (!_volumeDragging) UpdateVolume();
         TimerService.Update();
         UpdateIdleBar();
+        CheckSummary();
         await UpdateMediaAsync();
+    }
+
+    private DateTime _lastUpdateCheck;
+
+    private async Task CheckUpdateLaterAsync()
+    {
+        // не мешаем старту: спрашиваем GitHub через полминуты и потом раз в сутки
+        await Task.Delay(TimeSpan.FromSeconds(30));
+        if ((DateTime.UtcNow - _lastUpdateCheck).TotalHours < 24 && _lastUpdateCheck != default) return;
+        _lastUpdateCheck = DateTime.UtcNow;
+        await CheckUpdateAsync();
+    }
+
+    private async Task CheckUpdateAsync()
+    {
+        if (_update is not null) return;
+        _update = await Updater.CheckAsync();
+        if (_update is null) return;
+
+        _updateStrip ??= new SummaryStripWindow();
+        _updateStrip.Opened -= OnUpdateStripOpened;
+        _updateStrip.Opened += OnUpdateStripOpened;
+        var bounds = CapsuleScreenBounds();
+        _updateStrip.ShowNear(bounds.Left, bounds.Top, bounds.Width, bounds.Height,
+            $"доступна версия {_update.Version}", "\uE895");
+    }
+
+    private async void OnUpdateStripOpened()
+    {
+        if (_update is null) return;
+
+        var exe = Environment.ProcessPath ?? "";
+        ShowOsd("\uE896", "Обновление", "скачиваю");
+
+        var lastShown = -10;
+        var file = await Updater.DownloadAsync(_update, percent =>
+        {
+            if (percent / 10 == lastShown / 10) return;
+            lastShown = percent;
+            ShowOsd("\uE896", "Обновление", $"{percent}%", sticky: true);
+        }, CancellationToken.None);
+
+        if (file is null)
+        {
+            ShowOsd("\uE783", "Обновление", "не удалось скачать");
+            (Application.Current as App)?.Notify("Обновление", "Не получилось скачать новую версию");
+            return;
+        }
+
+        if (Updater.CanReplaceInPlace(exe))
+        {
+            ShowOsd("\uE895", "Обновление", "перезапускаюсь");
+            Updater.ScheduleReplace(file, exe);
+            Application.Current.Shutdown();
+            return;
+        }
+
+        var saved = Updater.MoveToDownloads(file, _update.Version);
+        (Application.Current as App)?.Notify("Обновление", "Новая версия сохранена в «Загрузки»");
+        try
+        {
+            Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{saved}\"") { UseShellExecute = true });
+        }
+        catch
+        {
+        }
+    }
+
+    // ── сводка дня ───────────────────────────────────────────────────────────
+
+    private SummaryStripWindow? _summaryStrip;
+    private SummaryWindow? _summaryWindow;
+
+    private void CheckSummary()
+    {
+        if (!_settings.SummaryEnabled) return;
+
+        var today = DateTime.Today.ToString("yyyy-MM-dd");
+        if (_settings.SummaryShownOn == today) return;
+
+        if (!TimeSpan.TryParse(_settings.SummaryTime, out var at)) at = new TimeSpan(9, 0, 0);
+        if (DateTime.Now.TimeOfDay < at) return;
+
+        _settings.SummaryShownOn = today;
+        _settings.Save();
+        ShowSummaryStrip();
+    }
+
+    /// <summary>Где капсула реально на экране: окно большое и прозрачное, а плашки нужны у самой капсулы.</summary>
+    private (double Left, double Top, double Width, double Height) CapsuleScreenBounds()
+    {
+        var dpi = VisualTreeHelper.GetDpi(this);
+        var topLeft = Capsule.PointToScreen(new Point(0, 0));
+        var bottomRight = Capsule.PointToScreen(new Point(Capsule.ActualWidth, Capsule.ActualHeight));
+        return (
+            topLeft.X / dpi.DpiScaleX,
+            topLeft.Y / dpi.DpiScaleY,
+            (bottomRight.X - topLeft.X) / dpi.DpiScaleX,
+            (bottomRight.Y - topLeft.Y) / dpi.DpiScaleY);
+    }
+
+    private void ShowSummaryStrip()
+    {
+        _summaryStrip ??= new SummaryStripWindow();
+        _summaryStrip.Opened -= ShowSummary;
+        _summaryStrip.Opened += ShowSummary;
+        var bounds = CapsuleScreenBounds();
+        _summaryStrip.ShowNear(bounds.Left, bounds.Top, bounds.Width, bounds.Height);
+    }
+
+    public void ShowSummary()
+    {
+        _summaryStrip?.HideNow();
+        if (_summaryWindow is { IsVisible: true })
+        {
+            _summaryWindow.Activate();
+            return;
+        }
+        _summaryWindow = new SummaryWindow(_settings);
+        _summaryWindow.ShowOnRight();
     }
 
     private DateTime _lastPrivacyCheck;

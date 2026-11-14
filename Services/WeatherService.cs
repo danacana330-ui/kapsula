@@ -11,6 +11,8 @@ public sealed class WeatherNow
     public string Description { get; init; } = "";
     public string Kind { get; init; } = "cloud";
     public double Wind { get; init; }
+    public string Sunrise { get; init; } = "";
+    public string Sunset { get; init; } = "";
     public List<(string Day, double Min, double Max, string Kind)> Days { get; } = new();
 }
 
@@ -38,6 +40,17 @@ public sealed class WeatherService
                 desc = en[0].GetProperty("value").GetString() ?? "";
 
             var code = (int)Num(current, "weatherCode");
+            var sunrise = "";
+            var sunset = "";
+            if (root.TryGetProperty("weather", out var forecastDays) &&
+                forecastDays.GetArrayLength() > 0 &&
+                forecastDays[0].TryGetProperty("astronomy", out var astronomy) &&
+                astronomy.GetArrayLength() > 0)
+            {
+                sunrise = astronomy[0].TryGetProperty("sunrise", out var rise) ? rise.GetString() ?? "" : "";
+                sunset = astronomy[0].TryGetProperty("sunset", out var set) ? set.GetString() ?? "" : "";
+            }
+
             var result = new WeatherNow
             {
                 City = city,
@@ -46,6 +59,8 @@ public sealed class WeatherService
                 Wind = wind,
                 Description = desc,
                 Kind = KindFor(code),
+                Sunrise = sunrise,
+                Sunset = sunset,
             };
 
             if (root.TryGetProperty("weather", out var days))

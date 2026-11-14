@@ -3,6 +3,7 @@ namespace Kapsula.Services;
 /// <summary>Один таймер на всё приложение: панель можно закрыть, отсчёт продолжается.</summary>
 public static class TimerService
 {
+    private const string FileName = "timer.json";
     private static DateTime? _end;
     private static DateTime? _firedAt;
 
@@ -31,13 +32,39 @@ public static class TimerService
         if (span <= TimeSpan.Zero) return;
         _end = DateTime.Now + span;
         _firedAt = null;
+        Persist();
     }
 
     public static void Stop()
     {
         _end = null;
         _firedAt = null;
+        Persist();
     }
+
+    /// <summary>Подхватить отсчёт, который шёл до перезапуска приложения.</summary>
+    public static void Restore()
+    {
+        var end = Store.Load<DateTime?>(FileName, null);
+        if (end is null)
+        {
+            _end = null;
+            return;
+        }
+
+        // Пропущенный таймер показываем, только если он истёк недавно.
+        if (end.Value <= DateTime.Now && DateTime.Now - end.Value > TimeSpan.FromHours(12))
+        {
+            _end = null;
+            Persist();
+            return;
+        }
+
+        _end = end;
+        _firedAt = null;
+    }
+
+    private static void Persist() => Store.Save(FileName, _end);
 
     /// <summary>Вызывается раз в секунду из общего тика окна.</summary>
     public static void Update()
@@ -46,6 +73,8 @@ public static class TimerService
         if (DateTime.Now < _end.Value) return;
 
         _firedAt = DateTime.Now;
+        _end = null;
+        Persist();
         Finished?.Invoke();
     }
 

@@ -28,11 +28,18 @@ public sealed class AppSettings
     public string WeatherCity { get; set; } = "Москва";
     public int VolumeStep { get; set; } = 2;
     public bool ShowOsd { get; set; } = true;
+    public bool RecordSystemAudio { get; set; } = true;
+    public bool SummaryEnabled { get; set; } = true;
+    public string SummaryTime { get; set; } = "09:00";
+    public string SummaryShownOn { get; set; } = "";
     public string RecordFolder { get; set; } = "";
     public List<string> HomeTiles { get; set; } = new()
     {
-        "clipboard", "shelf", "notes", "ai", "shot", "weather", "quick", "timer", "record",
+        "clipboard", "shelf", "notes", "ai", "shot", "weather", "quick", "timer", "record", "summary",
     };
+
+    /// <summary>Версия формата настроек: по ней досыпаем новые пункты в старые файлы.</summary>
+    public int Version { get; set; }
 
     private static string Dir =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Kapsula");
@@ -41,19 +48,35 @@ public sealed class AppSettings
 
     public static AppSettings Load()
     {
+        AppSettings settings;
         try
         {
             if (File.Exists(FilePath))
             {
                 var json = File.ReadAllText(FilePath);
-                return JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
+                settings = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
+            }
+            else
+            {
+                settings = new AppSettings();
             }
         }
         catch
         {
             // повреждённый файл настроек не должен мешать запуску
+            settings = new AppSettings();
         }
-        return new AppSettings();
+
+        if (settings.Version < 2)
+        {
+            // 2.0: у старых файлов нет плитки «Сводка» — досыпаем её один раз
+            settings.HomeTiles ??= new List<string>();
+            if (!settings.HomeTiles.Contains("summary")) settings.HomeTiles.Add("summary");
+            settings.Version = 2;
+            settings.Save();
+        }
+
+        return settings;
     }
 
     public void Save()

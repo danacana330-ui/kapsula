@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -30,6 +31,8 @@ public partial class SettingsWindow : Window
         _settings = settings;
 
         AutostartBox.IsChecked = settings.StartWithWindows;
+        SummaryBox.IsChecked = settings.SummaryEnabled;
+        SummaryTimeBox.Text = settings.SummaryTime;
         HoverBox.IsChecked = settings.ExpandOnHover;
         SecondsBox.IsChecked = settings.ShowSeconds;
         OsdBox.IsChecked = settings.ShowOsd;
@@ -59,6 +62,7 @@ public partial class SettingsWindow : Window
         CityBox.Text = settings.WeatherCity;
         AiBox.Text = settings.AiEndpoint;
         RecBox.Text = settings.RecordFolder;
+        RecAudioBox.IsChecked = settings.RecordSystemAudio;
 
         if (string.IsNullOrWhiteSpace(RecBox.Text))
             RecBox.Text = Path.Combine(
@@ -95,9 +99,48 @@ public partial class SettingsWindow : Window
         if (dialog.ShowDialog() == true) RecBox.Text = dialog.FolderName;
     }
 
+    /// <summary>«9», «9.30», «09:30» → «09:30»; непонятное значение заменяем на 09:00.</summary>
+    private static string NormalizeTime(string text)
+    {
+        text = text.Trim().Replace('.', ':');
+        if (TimeSpan.TryParse(text, out var span) && span >= TimeSpan.Zero && span < TimeSpan.FromDays(1))
+            return $"{span.Hours:00}:{span.Minutes:00}";
+        return "09:00";
+    }
+
+    private void OnMakeShortcut(object sender, RoutedEventArgs e)
+    {
+        var button = (Button)sender;
+        try
+        {
+            var exe = Environment.ProcessPath;
+            if (string.IsNullOrEmpty(exe)) return;
+
+            var link = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "Kapsula.lnk");
+            var shellType = Type.GetTypeFromProgID("WScript.Shell");
+            if (shellType is null) return;
+
+            dynamic shell = Activator.CreateInstance(shellType)!;
+            dynamic shortcut = shell.CreateShortcut(link);
+            shortcut.TargetPath = exe;
+            shortcut.WorkingDirectory = Path.GetDirectoryName(exe) ?? "";
+            shortcut.Description = "Kapsula — динамический остров";
+            shortcut.Save();
+
+            button.Content = "Ярлык создан";
+        }
+        catch (Exception ex)
+        {
+            button.Content = "Не вышло: " + ex.Message;
+        }
+    }
+
     private void OnSave(object sender, RoutedEventArgs e)
     {
         _settings.StartWithWindows = AutostartBox.IsChecked == true;
+        _settings.SummaryEnabled = SummaryBox.IsChecked == true;
+        _settings.SummaryTime = NormalizeTime(SummaryTimeBox.Text);
         _settings.ExpandOnHover = HoverBox.IsChecked == true;
         _settings.ShowSeconds = SecondsBox.IsChecked == true;
         _settings.ShowOsd = OsdBox.IsChecked == true;
@@ -114,6 +157,7 @@ public partial class SettingsWindow : Window
         _settings.WeatherCity = CityBox.Text.Trim();
         _settings.AiEndpoint = AiBox.Text.Trim();
         _settings.RecordFolder = RecBox.Text.Trim();
+        _settings.RecordSystemAudio = RecAudioBox.IsChecked == true;
         _settings.HomeTiles = TilesPanel.Children.OfType<CheckBox>()
             .Where(c => c.IsChecked == true)
             .Select(c => (string)c.Tag)

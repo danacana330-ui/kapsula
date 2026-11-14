@@ -30,21 +30,7 @@
         </Grid>
 
         <TextBox Grid.Row="1" x:Name="Search" Style="{StaticResource InputBox}"
-                 TextChanged="OnSearchChanged" Margin="0,0,0,10"/>
-        <TextBlock Grid.Row="1" Text="Поиск по истории" IsHitTestVisible="False"
-                   Margin="13,0,0,10" VerticalAlignment="Center"
-                   FontSize="12.5" Foreground="{x:Static local:Theme.DimBrush}">
-            <TextBlock.Style>
-                <Style TargetType="TextBlock">
-                    <Setter Property="Visibility" Value="Collapsed"/>
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding Text, ElementName=Search}" Value="">
-                            <Setter Property="Visibility" Value="Visible"/>
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </TextBlock.Style>
-        </TextBlock>
+                 TextChanged="OnSearchChanged" Margin="0,0,0,10" Tag="Поиск по истории"/>
 
         <ListBox Grid.Row="2" x:Name="List" Style="{StaticResource PlainList}"
                  SelectionChanged="OnPick">

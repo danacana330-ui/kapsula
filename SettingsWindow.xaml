@@ -29,7 +29,25 @@
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                 <StackPanel>
                     <CheckBox x:Name="AutostartBox" Content="Запускать вместе с Windows"
-                              Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,10"/>
+                              Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,6"/>
+                    <Button Style="{StaticResource GhostButton}" Content="Создать ярлык на рабочем столе"
+                            Click="OnMakeShortcut" HorizontalAlignment="Left" Margin="0,0,0,10"/>
+
+                    <TextBlock Text="Сводка дня" FontSize="11" Margin="0,4,0,6"
+                               Foreground="{x:Static local:Theme.DimBrush}"/>
+                    <CheckBox x:Name="SummaryBox" Content="Показывать утреннюю сводку"
+                              Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,8"/>
+                    <Grid Margin="0,0,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Во сколько" FontSize="12" VerticalAlignment="Center"
+                                   Foreground="{x:Static local:Theme.TextBrush}"/>
+                        <TextBox x:Name="SummaryTimeBox" Grid.Column="1" Width="86" Margin="12,0,0,0"
+                                 Style="{StaticResource InputBox}" Padding="10,6" Tag="09:00"/>
+                    </Grid>
+
                     <CheckBox x:Name="HoverBox" Content="Раскрывать при наведении"
                               Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,10"/>
                     <CheckBox x:Name="SecondsBox" Content="Показывать секунды на часах"
@@ -95,6 +113,9 @@
                     <TextBlock Text="Адрес Ollama" FontSize="11" Margin="0,0,0,6"
                                Foreground="{x:Static local:Theme.DimBrush}"/>
                     <TextBox x:Name="AiBox" Style="{StaticResource InputBox}" Margin="0,0,0,14"/>
+
+                    <CheckBox x:Name="RecAudioBox" Content="Записывать звук системы"
+                              Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,10"/>
 
                     <TextBlock Text="Папка для записей экрана" FontSize="11" Margin="0,0,0,6"
                                Foreground="{x:Static local:Theme.DimBrush}"/>

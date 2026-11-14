@@ -19,24 +19,10 @@
             <Button Style="{StaticResource IconButton}" Click="OnBack" ToolTip="Назад">
                 <TextBlock Text="&#xE72B;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
             </Button>
-            <Grid Grid.Column="1" Margin="6,0,0,0">
-                <TextBox x:Name="Query" Style="{StaticResource InputBox}" TextChanged="OnQueryChanged"
-                         KeyDown="OnQueryKey" FontSize="13.5"/>
-                <TextBlock Text="Запустить программу, найти файл, посчитать: 12*8" IsHitTestVisible="False"
-                           Margin="13,0,0,0" VerticalAlignment="Center" FontSize="13"
-                           Foreground="{x:Static local:Theme.DimBrush}">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Text, ElementName=Query}" Value="">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-            </Grid>
+            <TextBox x:Name="Query" Grid.Column="1" Margin="6,0,0,0" Style="{StaticResource InputBox}"
+                     TextChanged="OnQueryChanged"
+                     KeyDown="OnQueryKey" FontSize="13.5"
+                     Tag="Запустить программу, найти файл, посчитать: 12*8"/>
             <TextBlock Grid.Column="2" Text="Alt+Space" FontSize="10.5" VerticalAlignment="Center"
                        Margin="10,0,4,0" Foreground="{x:Static local:Theme.DimBrush}"/>
         </Grid>

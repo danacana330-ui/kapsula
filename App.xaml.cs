@@ -25,6 +25,20 @@ public partial class App : Application
         }
     }
 
+    /// <summary>Короткая строка состояния в подсказке трея: прогресс скачивания и т.п.</summary>
+    public void SetTrayStatus(string? text)
+    {
+        try
+        {
+            if (_tray is null) return;
+            var value = string.IsNullOrWhiteSpace(text) ? "Kapsula" : text!;
+            _tray.Text = value.Length > 63 ? value[..63] : value;
+        }
+        catch
+        {
+        }
+    }
+
     protected override void OnStartup(StartupEventArgs e)
     {
         _mutex = new Mutex(true, "Kapsula.SingleInstance", out var isFirst);
@@ -118,6 +132,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        MiniRuntime.Server.Stop();
         _tray?.Dispose();
         _mutex?.Dispose();
         base.OnExit(e);

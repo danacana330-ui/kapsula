@@ -22,10 +22,10 @@ public partial class OsdWindow : Window
         };
     }
 
-    public void Show(string glyph, string title, string value, bool sticky = false)
+    public void ShowOsd(string glyph, string title, string value, bool sticky = false)
     {
         Glyph.Text = glyph;
-        Title.Text = title;
+        Caption.Text = title;
         Value.Text = value;
         if (!IsVisible) Show();
         BeginAnimation(OpacityProperty, new DoubleAnimation(1, TimeSpan.FromMilliseconds(120)));

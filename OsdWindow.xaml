@@ -12,7 +12,7 @@
             <TextBlock x:Name="Glyph" Text="&#xE767;" FontFamily="Segoe MDL2 Assets" FontSize="16"
                        Foreground="{x:Static local:Theme.AccentBrush}" VerticalAlignment="Center"/>
             <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-                <TextBlock x:Name="Title" Text="" FontSize="11" Foreground="{x:Static local:Theme.DimBrush}"/>
+                <TextBlock x:Name="Caption" Text="" FontSize="11" Foreground="{x:Static local:Theme.DimBrush}"/>
                 <TextBlock x:Name="Value" Text="" FontSize="14" FontWeight="SemiBold"
                            Foreground="{x:Static local:Theme.TextBrush}"/>
             </StackPanel>
