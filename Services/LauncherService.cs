@@ -17,6 +17,9 @@ public sealed class LaunchItem
         "web" => "\uE774",
         "panel" => "\uE8B9",
         "settings" => "\uE713",
+        "clip" => "\uE77F",
+        "note" => "\uE70B",
+        "shelf" => "\uE8B7",
         _ => "\uE8A5",
     };
 }
@@ -38,6 +41,7 @@ public sealed class LauncherService
         ("Быстрые действия", "quick", "быстрые действия переключатели quick"),
         ("Полка файлов", "shelf", "полка файлы shelf"),
         ("Сводка дня", "summary", "сводка дня summary"),
+        ("Вид и поведение", "appearance", "вид внешний оформление тема appearance"),
         ("Настройки Kapsula", "settings", "настройки settings параметры"),
     };
 
@@ -155,6 +159,8 @@ public sealed class LauncherService
                 Kind = b.Key == "settings" ? "settings" : "panel",
             }));
 
+        results.AddRange(SearchOwn(query, 3));
+
         results.AddRange(_apps
             .Where(a => a.Title.Contains(query, StringComparison.OrdinalIgnoreCase))
             .OrderByDescending(a => CountOf(a.Path))
@@ -174,6 +180,59 @@ public sealed class LauncherService
             });
 
         return results;
+    }
+
+    /// <summary>Поиск по своим данным: буфер, заметки, полка.</summary>
+    private static IEnumerable<LaunchItem> SearchOwn(string query, int limit)
+    {
+        var found = new List<LaunchItem>();
+
+        foreach (var clip in ClipboardStore.Items
+                     .Where(i => i.Text.Contains(query, StringComparison.OrdinalIgnoreCase))
+                     .Take(limit))
+        {
+            found.Add(new LaunchItem
+            {
+                Title = "Буфер: " + One(clip.Text),
+                Path = clip.Text,
+                Kind = "clip",
+            });
+            if (found.Count >= limit) return found;
+        }
+
+        foreach (var note in NotesStore.Notes
+                     .Where(n => n.Text.Contains(query, StringComparison.OrdinalIgnoreCase))
+                     .Take(limit))
+        {
+            found.Add(new LaunchItem
+            {
+                Title = "Заметка: " + One(note.Text),
+                Path = note.Id,
+                Kind = "note",
+            });
+            if (found.Count >= limit) return found;
+        }
+
+        foreach (var file in ShelfStore.Files
+                     .Where(f => Path.GetFileName(f).Contains(query, StringComparison.OrdinalIgnoreCase))
+                     .Take(limit))
+        {
+            found.Add(new LaunchItem
+            {
+                Title = "Полка: " + Path.GetFileName(file),
+                Path = file,
+                Kind = "shelf",
+            });
+            if (found.Count >= limit) return found;
+        }
+
+        return found;
+    }
+
+    private static string One(string text)
+    {
+        var line = text.Replace("\r", " ").Replace("\n", " ").Trim();
+        return line.Length > 40 ? line[..40] + "…" : line;
     }
 
     private static IEnumerable<LaunchItem> SearchFiles(string query, int limit)
@@ -228,6 +287,18 @@ public sealed class LauncherService
             if (item.Kind == "settings")
             {
                 new SettingsWindow(App.Settings).Show();
+                return;
+            }
+
+            if (item.Kind == "clip")
+            {
+                System.Windows.Clipboard.SetText(item.Path);
+                return;
+            }
+
+            if (item.Kind == "note")
+            {
+                MainWindow.Instance?.OpenTile("notes");
                 return;
             }
 
