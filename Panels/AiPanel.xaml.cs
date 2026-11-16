@@ -134,6 +134,19 @@ public partial class AiPanel : UserControl
             });
         }
 
+        // Свой сервер (например, платная модель по своему ключу) — тоже наверху, до списка Ollama.
+        if (!string.IsNullOrWhiteSpace(_settings.AiServerUrl))
+        {
+            var model = string.IsNullOrWhiteSpace(_settings.AiServerModel) ? "модель не указана" : _settings.AiServerModel;
+            choices.Add(new AiChoice
+            {
+                Kind = "server",
+                Id = "server:" + model,
+                Title = model,
+                Subtitle = "свой сервер · " + HostOf(_settings.AiServerUrl),
+            });
+        }
+
         _ollamaOk = await _ai.IsRunningAsync();
         if (_ollamaOk)
         {
@@ -152,18 +165,6 @@ public partial class AiPanel : UserControl
                     Subtitle = $"{m.SizeText} · Ollama",
                 });
             }
-        }
-
-        if (!string.IsNullOrWhiteSpace(_settings.AiServerUrl))
-        {
-            var model = string.IsNullOrWhiteSpace(_settings.AiServerModel) ? "модель не указана" : _settings.AiServerModel;
-            choices.Add(new AiChoice
-            {
-                Kind = "server",
-                Id = "server:" + model,
-                Title = "Свой сервер",
-                Subtitle = $"{model} · {HostOf(_settings.AiServerUrl)}",
-            });
         }
 
         ModelsList.ItemsSource = choices;
