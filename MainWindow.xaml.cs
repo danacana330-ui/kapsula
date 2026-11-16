@@ -84,6 +84,7 @@ public partial class MainWindow : Window
         ApplyLook();
 
         ClipboardStore.Load();
+        ClipboardStore.Cleanup();
         ShelfStore.Load();
         NotesStore.Load();
         TimerService.Restore();
@@ -139,6 +140,10 @@ public partial class MainWindow : Window
 
             _waveTimer.Tick += (_, _) => UpdateLiquidEdge();
             _waveTimer.Start();
+
+            var cleanup = new DispatcherTimer { Interval = TimeSpan.FromHours(1) };
+            cleanup.Tick += (_, _) => ClipboardStore.Cleanup();
+            cleanup.Start();
 
             _ = CheckUpdateLaterAsync();
         };

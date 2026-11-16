@@ -20,6 +20,8 @@ public sealed class AppSettings
     public bool Onboarded { get; set; }
     /// <summary>Не запоминать в истории буфера строки, похожие на пароли и ключи.</summary>
     public bool SkipPasswords { get; set; } = true;
+    /// <summary>Через сколько часов вычищать историю буфера; 0 — не чистить.</summary>
+    public int ClipboardCleanupHours { get; set; } = 72;
     public bool ShowLiquidEdge { get; set; } = true;
     public double Scale { get; set; } = 1.0;
     public string UiFont { get; set; } = "Segoe UI Variable Display";

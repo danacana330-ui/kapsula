@@ -100,7 +100,13 @@
                     <CheckBox x:Name="FullscreenBox" Content="Прятать в полноэкранных видео и играх"
                               Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,10"/>
                     <CheckBox x:Name="ToastBox" Content="Уведомление при копировании"
-                              Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,18"/>
+                              Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,10"/>
+                    <CheckBox x:Name="SkipPwdBox" Content="Не запоминать пароли в буфере"
+                              Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,10"/>
+
+                    <TextBlock Text="Чистить историю буфера через, часов (0 — не чистить)" FontSize="11"
+                               Margin="0,0,0,6" Foreground="{x:Static local:Theme.DimBrush}"/>
+                    <TextBox x:Name="CleanupBox" Style="{StaticResource InputBox}" Margin="0,0,0,18"/>
 
                     <TextBlock Text="Что показывать на главной" FontSize="11" Margin="0,0,0,8"
                                Foreground="{x:Static local:Theme.DimBrush}"/>

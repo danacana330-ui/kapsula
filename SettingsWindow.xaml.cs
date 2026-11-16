@@ -44,6 +44,8 @@ public partial class SettingsWindow : Window
         PrivacyBox.IsChecked = settings.ShowPrivacyDots;
         FullscreenBox.IsChecked = settings.HideInFullscreen;
         ToastBox.IsChecked = settings.CopyToast;
+        SkipPwdBox.IsChecked = settings.SkipPasswords;
+        CleanupBox.Text = settings.ClipboardCleanupHours.ToString();
 
         ScaleSlider.Value = Math.Clamp(settings.Scale * 100, 100, 199);
         ScaleValue.Text = $"{ScaleSlider.Value:0} %";
@@ -152,6 +154,9 @@ public partial class SettingsWindow : Window
         _settings.ShowPrivacyDots = PrivacyBox.IsChecked == true;
         _settings.HideInFullscreen = FullscreenBox.IsChecked == true;
         _settings.CopyToast = ToastBox.IsChecked == true;
+        _settings.SkipPasswords = SkipPwdBox.IsChecked == true;
+        if (int.TryParse(CleanupBox.Text.Trim(), out var hours))
+            _settings.ClipboardCleanupHours = Math.Clamp(hours, 0, 8760);
         _settings.Scale = Math.Round(ScaleSlider.Value / 100, 2);
         _settings.UiFont = FontBox.SelectedItem as string ?? Fonts[0];
         _settings.WeatherCity = CityBox.Text.Trim();

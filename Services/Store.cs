@@ -124,6 +124,23 @@ public static class ClipboardStore
         Items.Remove(item);
         Store.Save("clipboard.json", Items.ToList());
     }
+
+    /// <summary>Вычищает незакреплённые записи старше срока. Возвращает, сколько убрано.</summary>
+    public static int PurgeOlderThan(TimeSpan age)
+    {
+        var cutoff = DateTime.Now - age;
+        var stale = Items.Where(i => !i.Pinned && i.At < cutoff).ToList();
+        foreach (var item in stale) Items.Remove(item);
+        if (stale.Count > 0) Store.Save("clipboard.json", Items.ToList());
+        return stale.Count;
+    }
+
+    /// <summary>Плановая чистка по сроку из настроек; 0 часов — не чистить.</summary>
+    public static void Cleanup()
+    {
+        var hours = App.Settings.ClipboardCleanupHours;
+        if (hours > 0) PurgeOlderThan(TimeSpan.FromHours(hours));
+    }
 }
 
 public static class ShelfStore
