@@ -44,10 +44,20 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBox x:Name="MinutesBox" Style="{StaticResource InputBox}" Text="5"/>
-                        <TextBlock Text="минут" FontSize="11" VerticalAlignment="Center" Margin="10,0,0,0"
+                        <TextBox x:Name="MinutesBox" Style="{StaticResource InputBox}" Text="5"
+                                 TextAlignment="Center" PreviewMouseWheel="OnMinutesWheel"
+                                 ToolTip="Можно писать 2:30 — это минуты и секунды"/>
+                        <TextBlock Text="мин" FontSize="11" VerticalAlignment="Center" Margin="8,0,0,0"
                                    Grid.Column="1" Foreground="{x:Static local:Theme.DimBrush}"/>
+                        <TextBox x:Name="SecondsBox" Style="{StaticResource InputBox}" Text="0"
+                                 Grid.Column="3" TextAlignment="Center" PreviewMouseWheel="OnSecondsWheel"
+                                 ToolTip="Колесо мыши меняет значение"/>
+                        <TextBlock Text="сек" FontSize="11" VerticalAlignment="Center" Margin="8,0,0,0"
+                                   Grid.Column="4" Foreground="{x:Static local:Theme.DimBrush}"/>
                     </Grid>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,14,0,0">
                         <Button Style="{StaticResource GhostButton}" Content="Старт" Click="OnStart"/>

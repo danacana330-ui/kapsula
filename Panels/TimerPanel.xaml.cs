@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using Kapsula.Services;
@@ -27,14 +28,62 @@ public partial class TimerPanel : UserControl
     private void OnPreset(object sender, RoutedEventArgs e)
     {
         if (sender is FrameworkElement { Tag: string minutes })
+        {
             MinutesBox.Text = minutes;
+            SecondsBox.Text = "0";
+        }
+    }
+
+    private void OnMinutesWheel(object sender, MouseWheelEventArgs e)
+    {
+        Nudge(MinutesBox, e.Delta > 0 ? 5 : -5, 999);
+        e.Handled = true;
+    }
+
+    private void OnSecondsWheel(object sender, MouseWheelEventArgs e)
+    {
+        Nudge(SecondsBox, e.Delta > 0 ? 5 : -5, 59);
+        e.Handled = true;
+    }
+
+    private static void Nudge(TextBox box, int delta, int max)
+    {
+        int.TryParse(box.Text, out var value);
+        box.Text = Math.Clamp(value + delta, 0, max).ToString();
+        box.CaretIndex = box.Text.Length;
     }
 
     private void OnStart(object sender, RoutedEventArgs e)
     {
-        if (!int.TryParse(MinutesBox.Text, out var minutes) || minutes <= 0) minutes = 5;
-        TimerService.Start(TimeSpan.FromMinutes(minutes), minutes + " мин");
+        var span = ReadTime();
+        if (span <= TimeSpan.Zero) span = TimeSpan.FromMinutes(5);
+        TimerService.Start(span, Label(span));
         Render();
+    }
+
+    // В поле минут можно написать «2:30» — это минуты и секунды; поле секунд тогда не нужно.
+    private TimeSpan ReadTime()
+    {
+        var text = MinutesBox.Text.Trim();
+        if (text.Contains(':'))
+        {
+            var parts = text.Split(':');
+            int.TryParse(parts[0], out var m);
+            int.TryParse(parts.Length > 1 ? parts[1] : "0", out var s);
+            return TimeSpan.FromSeconds(Math.Max(0, m) * 60 + Math.Clamp(s, 0, 59));
+        }
+
+        int.TryParse(text, out var minutes);
+        int.TryParse(SecondsBox.Text.Trim(), out var seconds);
+        return TimeSpan.FromSeconds(Math.Max(0, minutes) * 60 + Math.Clamp(seconds, 0, 59));
+    }
+
+    private static string Label(TimeSpan span)
+    {
+        var parts = new List<string>();
+        if ((int)span.TotalMinutes > 0) parts.Add($"{(int)span.TotalMinutes} мин");
+        if (span.Seconds > 0) parts.Add($"{span.Seconds} с");
+        return parts.Count > 0 ? string.Join(" ", parts) : "таймер";
     }
 
     private void OnStop(object sender, RoutedEventArgs e)
