@@ -102,6 +102,31 @@ public partial class ScreenshotEditor : Window
         Close();
     }
 
+    private async void OnRecognize(object sender, RoutedEventArgs e)
+    {
+        OcrButton.IsEnabled = false;
+        try
+        {
+            var text = await Services.OcrService.RecognizeAsync(Render());
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                OcrButton.ToolTip = "текст на снимке не найден";
+                return;
+            }
+
+            Clipboard.SetText(text.Trim());
+            Close();
+        }
+        catch (Exception ex)
+        {
+            OcrButton.ToolTip = "не получилось: " + ex.Message;
+        }
+        finally
+        {
+            OcrButton.IsEnabled = true;
+        }
+    }
+
     private void OnSave(object sender, RoutedEventArgs e)
     {
         var dialog = new SaveFileDialog

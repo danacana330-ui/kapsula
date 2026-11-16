@@ -65,6 +65,14 @@
                         <TextBlock Text="Найти в интернете" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
+                <Button x:Name="OcrButton" Style="{StaticResource GhostButton}" Click="OnRecognize"
+                        ToolTip="Распознать текст на снимке и скопировать">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE8D2;" FontFamily="Segoe MDL2 Assets" FontSize="11"
+                                   VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="Текст" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
                 <Button Style="{StaticResource GhostButton}" Content="Копировать" Click="OnCopy"/>
                 <Button Style="{StaticResource GhostButton}" Content="Сохранить" Click="OnSave"/>
                 <Button Style="{StaticResource IconButton}" Click="OnClose" ToolTip="Закрыть" Margin="4,0,0,0">
