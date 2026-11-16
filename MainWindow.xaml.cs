@@ -24,6 +24,7 @@ public partial class MainWindow : Window
     private const int HOTKEY_RECORD_ALT = 5;
     private const int HOTKEY_SEARCH = 6;
     private const int HOTKEY_NOTE = 7;
+    private const int HOTKEY_TRANSLATE = 8;
 
     private readonly MediaService _media = new();
     private readonly RecordingService _recorder = new();
@@ -191,6 +192,7 @@ public partial class MainWindow : Window
         NativeMethods.RegisterHotKey(handle, HOTKEY_RECORD_ALT, NativeMethods.MOD_CONTROL | NativeMethods.MOD_SHIFT, NativeMethods.VK_R);
         NativeMethods.RegisterHotKey(handle, HOTKEY_SEARCH, NativeMethods.MOD_CONTROL, NativeMethods.VK_K);
         NativeMethods.RegisterHotKey(handle, HOTKEY_NOTE, NativeMethods.MOD_CONTROL | NativeMethods.MOD_ALT, NativeMethods.VK_N);
+        NativeMethods.RegisterHotKey(handle, HOTKEY_TRANSLATE, NativeMethods.MOD_CONTROL | NativeMethods.MOD_ALT, NativeMethods.VK_T);
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -238,6 +240,10 @@ public partial class MainWindow : Window
                     OpenTile("notes");
                     handled = true;
                     break;
+                case HOTKEY_TRANSLATE:
+                    _ = TranslateSelectionAsync();
+                    handled = true;
+                    break;
             }
         }
         return IntPtr.Zero;
@@ -267,6 +273,20 @@ public partial class MainWindow : Window
         Body.Visibility = Visibility.Visible;
         Animate(Theme.ExpandedWidth, Theme.ExpandedHeight, TimeSpan.FromMilliseconds(260),
             new CubicEase { EasingMode = EasingMode.EaseOut });
+    }
+
+    /// <summary>Колесо над капсулой: вверх — раскрыть, вниз — свернуть.</summary>
+    private void OnCapsuleWheel(object sender, MouseWheelEventArgs e)
+    {
+        e.Handled = true;
+        if (e.Delta > 0)
+        {
+            if (!_expanded) Expand();
+        }
+        else
+        {
+            if (_expanded) Collapse();
+        }
     }
 
     public void Collapse()
@@ -789,6 +809,59 @@ public partial class MainWindow : Window
     private DateTime _lastPrivacyCheck;
     private bool? _lastCharging;
     private bool _fullShown;
+
+    /// <summary>Ctrl+Alt+T: копируем выделенное, переводим на русский и кладём перевод в буфер.</summary>
+    private async Task TranslateSelectionAsync()
+    {
+        string? before = null;
+        try
+        {
+            if (Clipboard.ContainsText()) before = Clipboard.GetText();
+        }
+        catch
+        {
+        }
+
+        NativeMethods.keybd_event(NativeMethods.VK_CONTROL, 0, 0, UIntPtr.Zero);
+        NativeMethods.keybd_event(NativeMethods.VK_C_LETTER, 0, 0, UIntPtr.Zero);
+        NativeMethods.keybd_event(NativeMethods.VK_C_LETTER, 0, NativeMethods.KEYEVENTF_KEYUP, UIntPtr.Zero);
+        NativeMethods.keybd_event(NativeMethods.VK_CONTROL, 0, NativeMethods.KEYEVENTF_KEYUP, UIntPtr.Zero);
+
+        await Task.Delay(250);
+
+        var picked = "";
+        try
+        {
+            if (Clipboard.ContainsText()) picked = Clipboard.GetText();
+        }
+        catch
+        {
+        }
+
+        if (string.IsNullOrWhiteSpace(picked) || picked == before || picked.Length > 4000)
+        {
+            ShowOsd("\uE8C8", "Перевод", "выдели текст");
+            return;
+        }
+
+        ShowOsd("\uE8C8", "Перевод", "перевожу…", sticky: true);
+        var result = await Services.Translator.ToRussianAsync(picked);
+        if (result is null)
+        {
+            ShowOsd("\uE8C8", "Перевод", "не получилось");
+            return;
+        }
+
+        try
+        {
+            Clipboard.SetText(result);
+        }
+        catch
+        {
+        }
+
+        ShowOsd("\uE8C8", "Перевод", result.Length > 70 ? result[..70] + "…" : result, sticky: true);
+    }
 
     private void CheckIndicators()
     {

@@ -12,6 +12,7 @@ internal static class NativeMethods
     public const int VK_R = 0x52;
     public const int VK_K = 0x4B;
     public const int VK_N = 0x4E;
+    public const int VK_T = 0x54;
 
     public const int MONITOR_DEFAULTTONEAREST = 2;
 
@@ -75,4 +76,11 @@ internal static class NativeMethods
 
     [DllImport("kernel32.dll")]
     public static extern uint GetTickCount();
+
+    [DllImport("user32.dll")]
+    public static extern void keybd_event(byte key, byte scan, uint flags, UIntPtr extra);
+
+    public const uint KEYEVENTF_KEYUP = 0x0002;
+    public const byte VK_CONTROL = 0x11;
+    public const byte VK_C_LETTER = 0x43;
 }

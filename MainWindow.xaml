@@ -28,6 +28,7 @@
                 MouseLeftButtonDown="OnCapsuleDrag"
                 MouseMove="OnCapsuleMove"
                 MouseLeftButtonUp="OnCapsuleUp"
+                PreviewMouseWheel="OnCapsuleWheel"
                 AllowDrop="True" Drop="OnWindowDrop" DragOver="OnWindowDragOver">
             <Border.Effect>
                 <DropShadowEffect x:Name="CapsuleShadow" BlurRadius="26" ShadowDepth="7" Direction="270" Opacity="0.5" Color="#000000"/>
