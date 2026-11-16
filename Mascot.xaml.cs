@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -63,6 +64,16 @@ public partial class Mascot : UserControl
         _targetX = Math.Clamp(nx, -1, 1);
         _targetY = Math.Clamp(ny, -1, 1);
     }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct POINT
+    {
+        public int X;
+        public int Y;
+    }
+
+    [DllImport("user32.dll")]
+    private static extern bool GetCursorPos(out POINT point);
 
     public bool WearingHeadphones
     {
@@ -177,11 +188,15 @@ public partial class Mascot : UserControl
     private void TrackCursor()
     {
         if (ActualWidth <= 0 || ActualHeight <= 0) return;
-        var p = Mouse.GetPosition(this);
-        var nx = Math.Clamp((p.X - ActualWidth / 2) / Math.Max(1, ActualWidth / 2), -1, 1);
-        var ny = Math.Clamp((p.Y - ActualHeight / 2) / Math.Max(1, ActualHeight / 2), -1, 1);
-        _lookX += (nx - _lookX) * 0.25;
-        _lookY += (ny - _lookY) * 0.25;
+        if (!GetCursorPos(out var p)) return;
+
+        // координаты курсора берём в масштабе экрана, а не внутри контрола: иначе курсор,
+        // стоящий далеко слева, всегда упирается в -1 и глаза застывают влево
+        var center = PointToScreen(new Point(ActualWidth / 2, ActualHeight / 2));
+        var nx = Math.Clamp((p.X - center.X) / 420.0, -1, 1);
+        var ny = Math.Clamp((p.Y - center.Y) / 540.0, -1, 1) * 0.5;
+        _lookX += (nx - _lookX) * 0.22;
+        _lookY += (ny - _lookY) * 0.22;
     }
 
     private void SetEyes(double height)
@@ -191,7 +206,7 @@ public partial class Mascot : UserControl
         var top = 13.7 + (2.6 - height) / 2 + _lookY * 0.9;
         Canvas.SetTop(EyeL, top);
         Canvas.SetTop(EyeR, top);
-        Canvas.SetLeft(EyeL, 16.2 + _lookX * 1.1);
-        Canvas.SetLeft(EyeR, 21.2 + _lookX * 1.1);
+        Canvas.SetLeft(EyeL, 16.2 + _lookX * 1.7);
+        Canvas.SetLeft(EyeR, 21.2 + _lookX * 1.7);
     }
 }
