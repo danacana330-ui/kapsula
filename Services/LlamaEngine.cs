@@ -224,21 +224,19 @@ public sealed class MiniAiService
 {
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromMinutes(10) };
 
-    private const string SystemPrompt =
-        "Ты помощник внутри небольшого приложения Kapsula для Windows. " +
-        "Всегда отвечай по-русски, кратко и по делу: одна-три фразы, без вступлений и повторов вопроса.";
-
     private readonly LlamaServer _server;
 
     public MiniAiService(LlamaServer server) => _server = server;
 
     public async Task<string> ChatAsync(IReadOnlyList<AiMessage> messages, Action<string> onToken, CancellationToken token)
     {
+        // 4096 токенов контекста у 1.5B: держим историю в пределах ~6 тыс. символов
+        var trimmed = AiHistory.Trim(messages, 6000);
         var payload = JsonSerializer.Serialize(new
         {
             stream = true,
-            messages = new[] { new { role = "system", content = SystemPrompt } }
-                .Concat(messages.Select(m => new { role = m.Role, content = m.Content }))
+            messages = new[] { new { role = "system", content = AiPrompt.System } }
+                .Concat(trimmed.Select(m => new { role = m.Role, content = m.Content }))
                 .ToArray(),
         });
 

@@ -73,6 +73,12 @@
                         <TextBlock Text="25 минут" FontSize="12.5"/>
                     </Button>
                 </UniformGrid>
+
+                <TextBlock Text="Идут сейчас" FontSize="11" Margin="2,14,0,6"
+                           Foreground="{x:Static local:Theme.DimBrush}"/>
+                <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="ActiveList"/>
+                </ScrollViewer>
             </StackPanel>
         </Grid>
     </Grid>

@@ -15,6 +15,8 @@ public sealed class LaunchItem
         "folder" => "\uE8B7",
         "calc" => "\uE8EF",
         "web" => "\uE774",
+        "panel" => "\uE8B9",
+        "settings" => "\uE713",
         _ => "\uE8A5",
     };
 }
@@ -22,11 +24,32 @@ public sealed class LaunchItem
 /// <summary>Быстрый запуск: ярлыки меню «Пуск», файлы в личных папках, калькулятор, поиск в интернете.</summary>
 public sealed class LauncherService
 {
+    private const string UsageFile = "launch_usage.json";
+
+    /// <summary>Разделы самой капсулы — их тоже ищем из общего поля.</summary>
+    private static readonly (string Title, string Key, string Words)[] Builtin =
+    {
+        ("Буфер обмена", "clipboard", "буфер обмена clipboard копии"),
+        ("Заметки", "notes", "заметки notes записи"),
+        ("Таймер", "timer", "таймер timer"),
+        ("Погода", "weather", "погода weather"),
+        ("ИИ-помощник", "ai", "ии помощник чат нейросеть ai"),
+        ("Скриншот", "shot", "скриншот снимок screenshot"),
+        ("Быстрые действия", "quick", "быстрые действия переключатели quick"),
+        ("Полка файлов", "shelf", "полка файлы shelf"),
+        ("Сводка дня", "summary", "сводка дня summary"),
+        ("Настройки Kapsula", "settings", "настройки settings параметры"),
+    };
+
+    private static Dictionary<string, int> _usage = new(StringComparer.OrdinalIgnoreCase);
+
     private readonly List<LaunchItem> _apps = new();
 
     public void BuildIndex()
     {
         _apps.Clear();
+        _usage = Store.Load(UsageFile, new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase));
+
         var roots = new[]
         {
             Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu),
@@ -35,6 +58,14 @@ public sealed class LauncherService
 
         foreach (var root in roots.Where(Directory.Exists))
             AddShortcuts(root);
+    }
+
+    private static int CountOf(string path) => _usage.TryGetValue(path, out var n) ? n : 0;
+
+    private static void Remember(string path)
+    {
+        _usage[path] = CountOf(path) + 1;
+        Store.Save(UsageFile, _usage);
     }
 
     /// <summary>
@@ -100,9 +131,10 @@ public sealed class LauncherService
         query = query.Trim();
         if (query.Length == 0)
         {
-            // пустой запрос — показываем приложения, чтобы панель не открывалась пустой
+            // пустой запрос — то, чем пользуются чаще, сверху
             return _apps
-                .OrderBy(a => a.Title.Length)
+                .OrderByDescending(a => CountOf(a.Path))
+                .ThenBy(a => a.Title.Length)
                 .ThenBy(a => a.Title, StringComparer.CurrentCultureIgnoreCase)
                 .Take(limit);
         }
@@ -112,9 +144,21 @@ public sealed class LauncherService
         if (TryCalculate(query, out var calc))
             results.Add(new LaunchItem { Title = $"{query} = {calc}", Path = calc, Kind = "calc" });
 
+        results.AddRange(Builtin
+            .Where(b => b.Title.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                        b.Words.Contains(query, StringComparison.OrdinalIgnoreCase))
+            .Take(3)
+            .Select(b => new LaunchItem
+            {
+                Title = b.Title,
+                Path = b.Key,
+                Kind = b.Key == "settings" ? "settings" : "panel",
+            }));
+
         results.AddRange(_apps
             .Where(a => a.Title.Contains(query, StringComparison.OrdinalIgnoreCase))
-            .OrderBy(a => a.Title.StartsWith(query, StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+            .OrderByDescending(a => CountOf(a.Path))
+            .ThenBy(a => a.Title.StartsWith(query, StringComparison.OrdinalIgnoreCase) ? 0 : 1)
             .ThenBy(a => a.Title.Length)
             .Take(limit));
 
@@ -174,6 +218,20 @@ public sealed class LauncherService
                 System.Windows.Clipboard.SetText(item.Path);
                 return;
             }
+
+            if (item.Kind == "panel")
+            {
+                MainWindow.Instance?.OpenTile(item.Path);
+                return;
+            }
+
+            if (item.Kind == "settings")
+            {
+                new SettingsWindow(App.Settings).Show();
+                return;
+            }
+
+            Remember(item.Path);
             Process.Start(new ProcessStartInfo(item.Path) { UseShellExecute = true });
         }
         catch

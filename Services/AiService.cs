@@ -20,6 +20,146 @@ public sealed class OllamaModel
         : $"{SizeBytes / 1_000_000.0:0} МБ";
 }
 
+/// <summary>Одна роль помощника для всех источников модели — мини, Ollama, свой сервер, облако.</summary>
+public static class AiPrompt
+{
+    public const string System =
+        "Ты помощник внутри небольшого приложения Kapsula для Windows. " +
+        "Всегда отвечай по-русски, кратко и по делу: одна-три фразы, без вступлений и повторов вопроса.";
+}
+
+public static class AiHistory
+{
+    /// <summary>
+    /// Оставляет свежие сообщения в пределах лимита символов: у мини-модели контекст 4096 токенов,
+    /// и без обрезки длинный чат молча теряет начало.
+    /// </summary>
+    public static List<AiMessage> Trim(IReadOnlyList<AiMessage> messages, int maxChars)
+    {
+        var kept = new List<AiMessage>();
+        var total = 0;
+        for (var i = messages.Count - 1; i >= 0; i--)
+        {
+            var length = messages[i].Content?.Length ?? 0;
+            if (total + length > maxChars && kept.Count > 0) break;
+            total += length;
+            kept.Insert(0, messages[i]);
+        }
+        return kept;
+    }
+}
+
+/// <summary>Свой сервер: любой OpenAI-совместимый адрес с ключом и именем модели.</summary>
+public static class CustomServer
+{
+    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromMinutes(5) };
+
+    private static string Normalize(string url)
+    {
+        url = url.Trim().TrimEnd('/');
+        if (url.Length == 0) return "";
+        if (!url.StartsWith("http", StringComparison.OrdinalIgnoreCase)) url = "https://" + url;
+        if (!url.EndsWith("/v1", StringComparison.OrdinalIgnoreCase)) url += "/v1";
+        return url;
+    }
+
+    private static HttpRequestMessage Request(HttpMethod method, string url, string key, string? body)
+    {
+        var request = new HttpRequestMessage(method, url);
+        if (!string.IsNullOrWhiteSpace(key))
+            request.Headers.TryAddWithoutValidation("Authorization", "Bearer " + key.Trim());
+        if (body is not null) request.Content = new StringContent(body, Encoding.UTF8, "application/json");
+        return request;
+    }
+
+    /// <summary>Список моделей сервера. Ошибку возвращаем текстом, чтобы её показать человеку.</summary>
+    public static async Task<(List<string> Models, string? Error)> ListAsync(string url, string key, CancellationToken token)
+    {
+        var models = new List<string>();
+        var normalized = Normalize(url);
+        if (normalized.Length == 0) return (models, "адрес не заполнен");
+        try
+        {
+            using var response = await Http.SendAsync(Request(HttpMethod.Get, normalized + "/models", key, null), token);
+            if (!response.IsSuccessStatusCode)
+                return (models, $"сервер ответил {(int)response.StatusCode}");
+            using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(token));
+            if (doc.RootElement.TryGetProperty("data", out var data))
+                foreach (var item in data.EnumerateArray())
+                    if (item.TryGetProperty("id", out var id) && id.GetString() is { Length: > 0 } name)
+                        models.Add(name);
+            return (models, null);
+        }
+        catch (Exception ex)
+        {
+            return (models, ex.Message);
+        }
+    }
+
+    public static async Task<string> ChatAsync(string url, string key, string model,
+        IReadOnlyList<AiMessage> messages, Action<string> onToken, CancellationToken token)
+    {
+        var normalized = Normalize(url);
+        var trimmed = AiHistory.Trim(messages, 24000);
+        var payload = JsonSerializer.Serialize(new
+        {
+            model,
+            stream = true,
+            messages = new[] { new { role = "system", content = AiPrompt.System } }
+                .Concat(trimmed.Select(m => new { role = m.Role, content = m.Content })).ToArray(),
+        });
+
+        var full = new StringBuilder();
+        try
+        {
+            using var response = await Http.SendAsync(
+                Request(HttpMethod.Post, normalized + "/chat/completions", key, payload),
+                HttpCompletionOption.ResponseHeadersRead, token);
+            if (!response.IsSuccessStatusCode)
+            {
+                var text = await response.Content.ReadAsStringAsync(token);
+                if (text.Length > 300) text = text[..300];
+                return full.Append($"не удалось получить ответ: сервер ответил {(int)response.StatusCode}. {text}").ToString();
+            }
+
+            await using var stream = await response.Content.ReadAsStreamAsync(token);
+            using var reader = new StreamReader(stream);
+            while (!reader.EndOfStream)
+            {
+                token.ThrowIfCancellationRequested();
+                var line = await reader.ReadLineAsync(token);
+                if (string.IsNullOrWhiteSpace(line) || !line.StartsWith("data:", StringComparison.Ordinal)) continue;
+                var json = line[5..].Trim();
+                if (json == "[DONE]") break;
+                try
+                {
+                    using var doc = JsonDocument.Parse(json);
+                    if (!doc.RootElement.TryGetProperty("choices", out var choices) || choices.GetArrayLength() == 0)
+                        continue;
+                    if (!choices[0].TryGetProperty("delta", out var delta)) continue;
+                    if (!delta.TryGetProperty("content", out var content)) continue;
+                    var piece = content.GetString() ?? "";
+                    if (piece.Length == 0) continue;
+                    full.Append(piece);
+                    onToken(piece);
+                }
+                catch (JsonException)
+                {
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            full.Append("\n[остановлено]");
+        }
+        catch (Exception ex)
+        {
+            full.Append("\n[сервер не ответил: " + ex.Message + "]");
+        }
+        return full.ToString();
+    }
+}
+
 /// <summary>Бесплатные облачные модели через локальный шлюз: быстро, но нужен интернет.</summary>
 public static class FreeCloud
 {
@@ -49,11 +189,13 @@ public static class FreeCloud
     public static async Task<string> ChatAsync(int port, string model, IReadOnlyList<AiMessage> messages,
         Action<string> onToken, CancellationToken token)
     {
+        var trimmed = AiHistory.Trim(messages, 24000);
         var payload = JsonSerializer.Serialize(new
         {
             model,
             stream = true,
-            messages = messages.Select(m => new { role = m.Role, content = m.Content }).ToArray(),
+            messages = new[] { new { role = "system", content = AiPrompt.System } }
+                .Concat(trimmed.Select(m => new { role = m.Role, content = m.Content })).ToArray(),
         });
 
         var full = new StringBuilder();
@@ -148,11 +290,13 @@ public sealed class AiService
 
     public async Task<string> ChatAsync(string model, IReadOnlyList<AiMessage> messages, Action<string> onToken, CancellationToken token)
     {
+        var trimmed = AiHistory.Trim(messages, 12000);
         var payload = JsonSerializer.Serialize(new
         {
             model,
             stream = true,
-            messages = messages.Select(m => new { role = m.Role, content = m.Content }).ToArray(),
+            messages = new[] { new { role = "system", content = AiPrompt.System } }
+                .Concat(trimmed.Select(m => new { role = m.Role, content = m.Content })).ToArray(),
         });
 
         var request = new HttpRequestMessage(HttpMethod.Post, _base + "/api/chat")

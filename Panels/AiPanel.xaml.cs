@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -10,6 +11,7 @@ namespace Kapsula.Panels;
 public sealed class ChatBubble : INotifyPropertyChanged
 {
     private string _text = "";
+    private string _meta = "";
 
     public bool IsUser { get; init; }
     public string Align => IsUser ? HorizontalAlignment.Right.ToString() : HorizontalAlignment.Left.ToString();
@@ -24,10 +26,21 @@ public sealed class ChatBubble : INotifyPropertyChanged
         }
     }
 
+    /// <summary>Подпись под сообщением: время ответа или пометка «команда».</summary>
+    public string Meta
+    {
+        get => _meta;
+        set
+        {
+            _meta = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Meta)));
+        }
+    }
+
     public event PropertyChangedEventHandler? PropertyChanged;
 }
 
-/// <summary>Строка в списке моделей: либо мини-модель, скачанная капсулой, либо модель Ollama.</summary>
+/// <summary>Строка в списке моделей: мини-модель капсулы, Ollama, облако или свой сервер.</summary>
 public sealed class AiChoice
 {
     public string Kind { get; init; } = "ollama";
@@ -52,6 +65,7 @@ public partial class AiPanel : UserControl
     private CancellationTokenSource? _cts;
     private bool _busy;
     private bool _ollamaOk;
+    private bool _cloudOk;
     private AiChoice? _choice;
 
     public AiPanel()
@@ -64,6 +78,10 @@ public partial class AiPanel : UserControl
         var (model, why) = AiService.Recommend();
         AdviceText.Text = $"{AiService.RamGb():0} ГБ ОЗУ · советуем {model} ({why})";
         PullBox.Text = model;
+
+        ServerUrl.Text = _settings.AiServerUrl;
+        ServerKey.Text = _settings.AiServerKey;
+        ServerModel.Text = _settings.AiServerModel;
 
         Loaded += async (_, _) => await InitAsync();
     }
@@ -120,58 +138,79 @@ public partial class AiPanel : UserControl
             }
         }
 
-        ModelsList.ItemsSource = choices;
-
+        // Облако: одна строка «авто», без списка названий — они только мешают глазу.
         var cloud = await FreeCloud.ListAsync(_settings.AiGatewayPort);
-        choices.AddRange(cloud.Select(m => new AiChoice
+        _cloudOk = cloud.Any(m => m.Name == "free-auto");
+        if (_cloudOk)
         {
-            Kind = "cloud",
-            Id = m.Name,
-            Title = CloudTitle(m.Name),
-            Subtitle = "бесплатно · облако",
-        }));
-        ModelsList.ItemsSource = null;
+            choices.Add(new AiChoice
+            {
+                Kind = "cloud",
+                Id = "free-auto",
+                Title = "Бесплатная · авто",
+                Subtitle = "облако · нужен интернет",
+            });
+        }
+
+        if (!string.IsNullOrWhiteSpace(_settings.AiServerUrl))
+        {
+            var model = string.IsNullOrWhiteSpace(_settings.AiServerModel) ? "модель не указана" : _settings.AiServerModel;
+            choices.Add(new AiChoice
+            {
+                Kind = "server",
+                Id = "server:" + model,
+                Title = "Свой сервер",
+                Subtitle = $"{model} · {HostOf(_settings.AiServerUrl)}",
+            });
+        }
+
         ModelsList.ItemsSource = choices;
 
-        HintText.Text = _ollamaOk ? "Ollama на связи" : "своя мини-модель";
-
+        var saved = choices.FirstOrDefault(c => c.Id == _settings.AiModel);
         var installed = choices.FirstOrDefault(c => c.Kind == "mini" && c.Mini is not null &&
                                                    MiniModelStore.IsInstalled(c.Mini));
-        var saved = choices.FirstOrDefault(c => c.Kind is "ollama" or "cloud" && c.Id == _settings.AiModel);
-        ModelsList.SelectedItem = installed ?? saved ?? choices.FirstOrDefault();
+        ModelsList.SelectedItem = saved ?? installed ?? choices.FirstOrDefault();
+
+        if (!_cloudOk && !_ollamaOk)
+            HintText.Text = "своя мини-модель";
+        else if (!_cloudOk)
+            HintText.Text = "Ollama на связи";
+    }
+
+    private static string HostOf(string url)
+    {
+        try
+        {
+            return new Uri(url.Contains("://") ? url : "https://" + url).Host;
+        }
+        catch
+        {
+            return url;
+        }
     }
 
     private void OnModelPicked(object sender, SelectionChangedEventArgs e)
     {
         _choice = ModelsList.SelectedItem as AiChoice;
+        if (_choice is null) return;
+
         UpdateMiniControls();
 
-        if (_choice is { Kind: "ollama" } or { Kind: "cloud" })
-        {
-            _settings.AiModel = _choice.Id;
-            _settings.Save();
-        }
+        _settings.AiModel = _choice.Id;
+        _settings.Save();
 
-        OllamaBanner.Visibility = _ollamaOk && _choice is { Kind: "mini" }
+        OllamaBanner.Visibility = _ollamaOk && _choice.Kind == "mini"
             ? Visibility.Visible
             : Visibility.Collapsed;
 
-        if (_choice is { Kind: "cloud" })
-            HintText.Text = "бесплатная облачная модель · нужен интернет";
+        HintText.Text = _choice.Kind switch
+        {
+            "cloud" => "бесплатная облачная модель · нужен интернет",
+            "server" => "свой сервер · " + HostOf(_settings.AiServerUrl),
+            "ollama" => "Ollama на связи",
+            _ => MiniModelStore.IsInstalled(_choice.Mini!) ? $"{_choice.Title} готова" : $"{_choice.Title} · {_choice.Mini!.Note}",
+        };
     }
-
-    private static string CloudTitle(string id) => id switch
-    {
-        "free-auto" => "Бесплатная · авто",
-        "free-llama-70b" => "Бесплатная · Llama 70B",
-        "free-gpt-oss-120b" => "Бесплатная · GPT-OSS 120B",
-        "free-gpt-oss-20b" => "Бесплатная · GPT-OSS 20B",
-        "free-qwen3.5" => "Бесплатная · Qwen3.5 397B",
-        "free-qwen3.5-9b" => "Бесплатная · Qwen3.5 9B",
-        "free-mistral" => "Бесплатная · Mistral 24B",
-        "free-deepseek" => "Бесплатная · DeepSeek",
-        _ => id,
-    };
 
     private void UpdateMiniControls()
     {
@@ -186,9 +225,6 @@ public partial class AiPanel : UserControl
         MiniActionBtn.Visibility = Visibility.Visible;
         OllamaPullBlock.Visibility = Visibility.Collapsed;
         MiniActionBtn.Content = MiniModelStore.IsInstalled(mini) ? "Удалить" : "Скачать";
-        HintText.Text = MiniModelStore.IsInstalled(mini)
-            ? $"{mini.Title} готова"
-            : $"{mini.Title} · {mini.Note}";
     }
 
     private async void OnMiniAction(object sender, RoutedEventArgs e)
@@ -240,6 +276,58 @@ public partial class AiPanel : UserControl
         OllamaBanner.Visibility = Visibility.Collapsed;
     }
 
+    // ── свой сервер ─────────────────────────────────────────────────────────
+
+    private void OnServerSave(object sender, RoutedEventArgs e)
+    {
+        _settings.AiServerUrl = ServerUrl.Text.Trim();
+        _settings.AiServerKey = ServerKey.Text.Trim();
+        _settings.AiServerModel = ServerModel.Text.Trim();
+        _settings.Save();
+
+        ServerStatus.Text = string.IsNullOrWhiteSpace(_settings.AiServerUrl)
+            ? "адрес пустой — сервер отключён"
+            : "сохранено";
+
+        if (!string.IsNullOrWhiteSpace(_settings.AiServerUrl))
+            _settings.AiModel = "server:" + _settings.AiServerModel;
+        _settings.Save();
+
+        _ = InitAsync();
+    }
+
+    private async void OnServerTest(object sender, RoutedEventArgs e)
+    {
+        var url = ServerUrl.Text.Trim();
+        if (url.Length == 0)
+        {
+            ServerStatus.Text = "сначала впиши адрес";
+            return;
+        }
+
+        ServerTestBtn.IsEnabled = false;
+        ServerStatus.Text = "проверяю…";
+        var (models, error) = await CustomServer.ListAsync(url, ServerKey.Text.Trim(), CancellationToken.None);
+        ServerTestBtn.IsEnabled = true;
+
+        if (error is not null)
+        {
+            ServerStatus.Text = "не работает: " + error;
+            return;
+        }
+
+        if (models.Count == 0)
+        {
+            ServerStatus.Text = "сервер ответил, но моделей в списке нет — впиши имя вручную";
+            return;
+        }
+
+        ServerStatus.Text = $"работает, моделей: {models.Count} · {string.Join(", ", models.Take(3))}";
+        if (string.IsNullOrWhiteSpace(ServerModel.Text)) ServerModel.Text = models[0];
+    }
+
+    // ── чат ─────────────────────────────────────────────────────────────────
+
     private async void OnSend(object sender, RoutedEventArgs e) => await SendAsync();
 
     private async void OnInputKey(object sender, KeyEventArgs e)
@@ -253,27 +341,48 @@ public partial class AiPanel : UserControl
 
     private async Task SendAsync()
     {
-        if (_busy) return;
         var text = Input.Text.Trim();
         if (text.Length == 0) return;
-        if (_choice is null)
-        {
-            HintText.Text = "сначала выбери модель";
-            return;
-        }
-
         Input.Text = "";
-        _bubbles.Add(new ChatBubble { IsUser = true, Text = text });
-        _history.Add(new AiMessage { Role = "user", Content = text });
+        await RunAsync(text, echoUser: true);
+    }
+
+    private async Task RunAsync(string text, bool echoUser)
+    {
+        if (_busy) return;
+
+        if (echoUser)
+        {
+            _bubbles.Add(new ChatBubble { IsUser = true, Text = text });
+            _history.Add(new AiMessage { Role = "user", Content = text });
+        }
 
         var answer = new ChatBubble { IsUser = false, Text = "" };
         _bubbles.Add(answer);
         ChatScroll.ScrollToEnd();
 
+        // простые команды понимаем сами, без модели — быстро и офлайн
+        if (QuickCommands.TryHandle(text, out var quickReply))
+        {
+            answer.Text = quickReply;
+            answer.Meta = "команда";
+            _history.Add(new AiMessage { Role = "assistant", Content = quickReply });
+            PersistChat();
+            return;
+        }
+
+        if (_choice is null)
+        {
+            answer.Text = "Сначала выбери модель слева.";
+            return;
+        }
+
         _busy = true;
         SendBtn.IsEnabled = false;
+        RegenBtn.IsEnabled = false;
         StopBtn.Visibility = Visibility.Visible;
         _cts = new CancellationTokenSource();
+        var watch = Stopwatch.StartNew();
         try
         {
             string full;
@@ -284,6 +393,15 @@ public partial class AiPanel : UserControl
                     answer.Text += piece;
                     ChatScroll.ScrollToEnd();
                 }, _cts.Token);
+            }
+            else if (_choice.Kind == "server")
+            {
+                full = await CustomServer.ChatAsync(_settings.AiServerUrl, _settings.AiServerKey,
+                    _settings.AiServerModel, _history, piece =>
+                    {
+                        answer.Text += piece;
+                        ChatScroll.ScrollToEnd();
+                    }, _cts.Token);
             }
             else if (_choice.Kind == "ollama")
             {
@@ -298,7 +416,7 @@ public partial class AiPanel : UserControl
                 var ready = await EnsureMiniAsync(_choice.Mini, _cts.Token);
                 if (!ready)
                 {
-                    answer.Text = "(мини-модель не запустилась)";
+                    answer.Text = "Мини-модель не запустилась. Проверь свободное место и скачивание.";
                     return;
                 }
 
@@ -309,17 +427,46 @@ public partial class AiPanel : UserControl
                 }, _cts.Token);
             }
 
-            _history.Add(new AiMessage { Role = "assistant", Content = full });
+            watch.Stop();
             if (answer.Text.Length == 0) answer.Text = "(пустой ответ)";
+            answer.Meta = $"{watch.Elapsed.TotalSeconds:0.0} с";
+            _history.Add(new AiMessage { Role = "assistant", Content = full });
             PersistChat();
         }
         finally
         {
             _busy = false;
             SendBtn.IsEnabled = true;
+            RegenBtn.IsEnabled = true;
             StopBtn.Visibility = Visibility.Collapsed;
             _cts?.Dispose();
             _cts = null;
+        }
+    }
+
+    /// <summary>Повторить последний вопрос: убираем прошлый ответ и спрашиваем снова.</summary>
+    private async void OnRegenerate(object sender, RoutedEventArgs e)
+    {
+        if (_busy) return;
+        var lastUser = _history.LastOrDefault(m => m.Role == "user");
+        if (lastUser is null) return;
+
+        while (_history.Count > 0 && _history[^1].Role != "user") _history.RemoveAt(_history.Count - 1);
+        while (_bubbles.Count > 0 && !_bubbles[^1].IsUser) _bubbles.RemoveAt(_bubbles.Count - 1);
+        PersistChat();
+
+        await RunAsync(lastUser.Content, echoUser: false);
+    }
+
+    private void OnCopyBubble(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem { DataContext: ChatBubble bubble }) return;
+        try
+        {
+            Clipboard.SetText(bubble.Text);
+        }
+        catch
+        {
         }
     }
 

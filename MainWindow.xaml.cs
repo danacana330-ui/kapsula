@@ -22,6 +22,7 @@ public partial class MainWindow : Window
     private const int HOTKEY_RECORD = 3;
     private const int HOTKEY_SHOT_ALT = 4;
     private const int HOTKEY_RECORD_ALT = 5;
+    private const int HOTKEY_SEARCH = 6;
 
     private readonly MediaService _media = new();
     private readonly RecordingService _recorder = new();
@@ -71,6 +72,7 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
+        Instance = this;
         _settings = App.Settings;
         Theme.SetLight(_settings.LightTheme);
         Theme.SetRim(_settings.LightRim);
@@ -170,6 +172,7 @@ public partial class MainWindow : Window
         NativeMethods.RegisterHotKey(handle, HOTKEY_RECORD, NativeMethods.MOD_ALT, NativeMethods.VK_R);
         NativeMethods.RegisterHotKey(handle, HOTKEY_SHOT_ALT, NativeMethods.MOD_CONTROL | NativeMethods.MOD_SHIFT, NativeMethods.VK_S);
         NativeMethods.RegisterHotKey(handle, HOTKEY_RECORD_ALT, NativeMethods.MOD_CONTROL | NativeMethods.MOD_SHIFT, NativeMethods.VK_R);
+        NativeMethods.RegisterHotKey(handle, HOTKEY_SEARCH, NativeMethods.MOD_CONTROL, NativeMethods.VK_K);
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -199,6 +202,7 @@ public partial class MainWindow : Window
             switch (wParam.ToInt32())
             {
                 case HOTKEY_LAUNCHER:
+                case HOTKEY_SEARCH:
                     OpenPanel(new LauncherPanel());
                     handled = true;
                     break;
@@ -486,6 +490,12 @@ public partial class MainWindow : Window
     private void OnTile(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: string tag }) return;
+        OpenTile(tag);
+    }
+
+    /// <summary>Открыть раздел по имени плитки — используется и лаунчером.</summary>
+    public void OpenTile(string tag)
+    {
         switch (tag)
         {
             case "clipboard":
@@ -578,12 +588,36 @@ public partial class MainWindow : Window
         {
             Show();
             if (shot is null) return;
+
+            // снимок сразу в буфер, редактор открывается как обычно
+            try
+            {
+                Clipboard.SetImage(shot);
+            }
+            catch
+            {
+            }
+
             var editor = new ScreenshotEditor(shot);
             editor.Show();
             editor.Activate();
         };
         overlay.Show();
         overlay.Activate();
+    }
+
+    /// <summary>Единственное окно капсулы — нужно командам из чата (скриншот, тема).</summary>
+    public static MainWindow? Instance { get; private set; }
+
+    /// <summary>Снимок экрана по просьбе из чата ИИ.</summary>
+    public void TakeScreenshot() => StartScreenshot();
+
+    /// <summary>Светлая или тёмная тема по просьбе из чата ИИ.</summary>
+    public void SetLightTheme(bool light)
+    {
+        App.Settings.LightTheme = light;
+        App.Settings.Save();
+        ApplySettings();
     }
 
     // ── обновление данных ────────────────────────────────────────────────────

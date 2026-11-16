@@ -47,6 +47,8 @@ public sealed class ClipItem
 {
     public string Text { get; set; } = "";
     public DateTime At { get; set; }
+    /// <summary>Закреплённое не вымывается из истории и всегда сверху.</summary>
+    public bool Pinned { get; set; }
     public bool IsLink => Text.StartsWith("http", StringComparison.OrdinalIgnoreCase);
 }
 
@@ -61,21 +63,59 @@ public static class ClipboardStore
             Items.Add(item);
     }
 
+    /// <summary>Похоже на пароль или ключ: без пробелов, есть буквы и цифры, 8–64 символа.</summary>
+    public static bool LooksLikeSecret(string text)
+    {
+        if (text.Length is < 8 or > 64) return false;
+        if (text.Any(char.IsWhiteSpace)) return false;
+        var letters = text.Count(char.IsLetter);
+        var digits = text.Count(char.IsDigit);
+        var symbols = text.Length - letters - digits;
+        return letters >= 3 && digits >= 2 && (symbols > 0 || (text.Any(char.IsUpper) && text.Any(char.IsLower)));
+    }
+
     public static void Push(string text)
     {
         if (string.IsNullOrWhiteSpace(text)) return;
         text = text.Trim();
         if (text.Length > 20000) text = text[..20000];
+        if (App.Settings.SkipPasswords && LooksLikeSecret(text)) return;
+
         var existing = Items.FirstOrDefault(i => i.Text == text);
-        if (existing is not null) Items.Remove(existing);
-        Items.Insert(0, new ClipItem { Text = text, At = DateTime.Now });
-        while (Items.Count > Max) Items.RemoveAt(Items.Count - 1);
+        if (existing is not null)
+        {
+            if (existing.Pinned) return;
+            Items.Remove(existing);
+        }
+
+        // закреплённые держим сверху, новые кладём сразу после них
+        var index = Items.Count(i => i.Pinned);
+        Items.Insert(index, new ClipItem { Text = text, At = DateTime.Now });
+        Trim();
+        Store.Save("clipboard.json", Items.ToList());
+    }
+
+    private static void Trim()
+    {
+        while (Items.Count > Max)
+        {
+            var last = Items.LastOrDefault(i => !i.Pinned);
+            if (last is null) return;
+            Items.Remove(last);
+        }
+    }
+
+    public static void TogglePin(ClipItem item)
+    {
+        item.Pinned = !item.Pinned;
+        var index = Items.IndexOf(item);
+        if (index >= 0) Items.Move(index, item.Pinned ? Items.Count(i => i.Pinned) - 1 : Items.Count(i => i.Pinned));
         Store.Save("clipboard.json", Items.ToList());
     }
 
     public static void Clear()
     {
-        Items.Clear();
+        foreach (var item in Items.Where(i => !i.Pinned).ToList()) Items.Remove(item);
         Store.Save("clipboard.json", Items.ToList());
     }
 

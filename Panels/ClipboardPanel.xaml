@@ -40,6 +40,7 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <StackPanel>
                             <TextBlock Text="{Binding Text}" TextWrapping="Wrap" MaxHeight="42"
@@ -48,7 +49,24 @@
                             <TextBlock Text="{Binding At, StringFormat='{}{0:HH:mm}'}" FontSize="10.5"
                                        Margin="0,4,0,0" Foreground="{x:Static local:Theme.DimBrush}"/>
                         </StackPanel>
-                        <Button Grid.Column="1" Style="{StaticResource IconButton}" Click="OnDelete"
+                        <Button Grid.Column="1" Style="{StaticResource IconButton}" Click="OnPin"
+                                Tag="{Binding}" ToolTip="Закрепить">
+                            <TextBlock FontFamily="Segoe MDL2 Assets" FontSize="11">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="&#xE718;"/>
+                                        <Setter Property="Opacity" Value="0.55"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Pinned}" Value="True">
+                                                <Setter Property="Text" Value="&#xE840;"/>
+                                                <Setter Property="Opacity" Value="1"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Button>
+                        <Button Grid.Column="2" Style="{StaticResource IconButton}" Click="OnDelete"
                                 Tag="{Binding}" ToolTip="Удалить">
                             <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="11"/>
                         </Button>

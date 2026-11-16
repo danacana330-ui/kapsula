@@ -16,6 +16,10 @@ public sealed class AppSettings
     public bool ShowPrivacyDots { get; set; } = true;
     public bool HideInFullscreen { get; set; } = true;
     public bool CopyToast { get; set; } = true;
+    /// <summary>Знакомство при первом запуске уже показано.</summary>
+    public bool Onboarded { get; set; }
+    /// <summary>Не запоминать в истории буфера строки, похожие на пароли и ключи.</summary>
+    public bool SkipPasswords { get; set; } = true;
     public bool ShowLiquidEdge { get; set; } = true;
     public double Scale { get; set; } = 1.0;
     public string UiFont { get; set; } = "Segoe UI Variable Display";
@@ -27,6 +31,10 @@ public sealed class AppSettings
     public string AiEndpoint { get; set; } = "http://localhost:11434";
     /// <summary>Порт шлюза бесплатных облачных моделей (Desktop\FreeLLM\gateway.py).</summary>
     public int AiGatewayPort { get; set; } = 8090;
+    /// <summary>Свой сервер: адрес вида https://host/v1, ключ и имя модели (любой OpenAI-совместимый).</summary>
+    public string AiServerUrl { get; set; } = "";
+    public string AiServerKey { get; set; } = "";
+    public string AiServerModel { get; set; } = "";
     public string WeatherCity { get; set; } = "Москва";
     public int VolumeStep { get; set; } = 2;
     public bool ShowOsd { get; set; } = true;

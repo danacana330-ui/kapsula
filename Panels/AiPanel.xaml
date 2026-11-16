@@ -77,6 +77,29 @@
                             <Button Style="{StaticResource GhostButton}" Content="Скачать в Ollama" Click="OnPull"
                                     HorizontalAlignment="Left" Margin="0,6,0,0"/>
                         </StackPanel>
+
+                        <Expander x:Name="ServerBox" Header="Свой сервер" Margin="0,10,0,0"
+                                  Foreground="{x:Static local:Theme.DimBrush}" FontSize="11">
+                            <StackPanel Margin="0,6,0,0">
+                                <TextBlock Text="Адрес (…/v1)" FontSize="10" Margin="2,0,0,3"
+                                           Foreground="{x:Static local:Theme.DimBrush}"/>
+                                <TextBox x:Name="ServerUrl" Style="{StaticResource InputBox}" FontSize="11"/>
+                                <TextBlock Text="Ключ" FontSize="10" Margin="2,6,0,3"
+                                           Foreground="{x:Static local:Theme.DimBrush}"/>
+                                <TextBox x:Name="ServerKey" Style="{StaticResource InputBox}" FontSize="11"/>
+                                <TextBlock Text="Модель" FontSize="10" Margin="2,6,0,3"
+                                           Foreground="{x:Static local:Theme.DimBrush}"/>
+                                <TextBox x:Name="ServerModel" Style="{StaticResource InputBox}" FontSize="11"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <Button x:Name="ServerSaveBtn" Style="{StaticResource GhostButton}"
+                                            Content="Сохранить" Click="OnServerSave" Padding="8,3"/>
+                                    <Button x:Name="ServerTestBtn" Style="{StaticResource GhostButton}"
+                                            Content="Проверить" Click="OnServerTest" Padding="8,3" Margin="6,0,0,0"/>
+                                </StackPanel>
+                                <TextBlock x:Name="ServerStatus" FontSize="10" TextWrapping="Wrap" Margin="2,6,0,0"
+                                           Foreground="{x:Static local:Theme.DimBrush}"/>
+                            </StackPanel>
+                        </Expander>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -110,6 +133,11 @@
                             <DataTemplate>
                                 <Border CornerRadius="14" Padding="12,9" Margin="0,0,0,8"
                                         MaxWidth="460" HorizontalAlignment="{Binding Align}">
+                                    <Border.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Копировать ответ" Click="OnCopyBubble"/>
+                                        </ContextMenu>
+                                    </Border.ContextMenu>
                                     <Border.Style>
                                         <Style TargetType="Border">
                                             <Setter Property="Background" Value="#14FFFFFF"/>
@@ -120,8 +148,12 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
-                                    <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="12.5"
-                                               Foreground="{x:Static local:Theme.TextBrush}"/>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="12.5"
+                                                   Foreground="{x:Static local:Theme.TextBrush}"/>
+                                        <TextBlock Text="{Binding Meta}" FontSize="9.5" Margin="0,4,0,0"
+                                                   Foreground="{x:Static local:Theme.DimBrush}"/>
+                                    </StackPanel>
                                 </Border>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -139,6 +171,8 @@
                              Tag="Спроси что-нибудь — отвечает локальная модель"/>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="8,0,0,0"
                                 VerticalAlignment="Center">
+                        <Button x:Name="RegenBtn" Style="{StaticResource GhostButton}" Content="Заново"
+                                Click="OnRegenerate" Margin="0,0,6,0"/>
                         <Button x:Name="StopBtn" Style="{StaticResource GhostButton}" Content="Стоп"
                                 Click="OnStop" Margin="0,0,6,0" Visibility="Collapsed"/>
                         <Button x:Name="SendBtn" Style="{StaticResource GhostButton}" Content="Отправить"

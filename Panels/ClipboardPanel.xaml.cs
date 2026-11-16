@@ -22,11 +22,19 @@ public partial class ClipboardPanel : UserControl
     private void Filter(string query)
     {
         _view.Clear();
-        foreach (var item in ClipboardStore.Items)
+        // закреплённые сверху, дальше по свежести
+        foreach (var item in ClipboardStore.Items.OrderByDescending(i => i.Pinned))
         {
             if (query.Length == 0 || item.Text.Contains(query, StringComparison.OrdinalIgnoreCase))
                 _view.Add(item);
         }
+    }
+
+    private void OnPin(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: ClipItem item }) return;
+        ClipboardStore.TogglePin(item);
+        Filter(Search.Text);
     }
 
     private void OnSearchChanged(object sender, TextChangedEventArgs e) => Filter(Search.Text);

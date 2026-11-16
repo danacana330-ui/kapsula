@@ -10,6 +10,7 @@ internal static class NativeMethods
     public const int VK_SPACE = 0x20;
     public const int VK_S = 0x53;
     public const int VK_R = 0x52;
+    public const int VK_K = 0x4B;
 
     public const int MONITOR_DEFAULTTONEAREST = 2;
 

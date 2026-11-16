@@ -14,6 +14,20 @@ public partial class App : Application
 
     public static AppSettings Settings { get; private set; } = new();
 
+    /// <summary>Журнал ошибок рядом с настройками — его можно открыть из трея.</summary>
+    public static string LogPath => Path.Combine(BackupService.DataDir, "errors.log");
+
+    public static void LogError(Exception exception)
+    {
+        try
+        {
+            File.AppendAllText(LogPath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {exception}\n---\n");
+        }
+        catch
+        {
+        }
+    }
+
     public void Notify(string title, string text)
     {
         try
@@ -57,20 +71,24 @@ public partial class App : Application
         _window.SourceInitialized += (_, _) => WindowHelper.MakeOverlay(_window);
         _window.Show();
 
+        if (!Settings.Onboarded)
+        {
+            var onboarding = new OnboardingWindow();
+            onboarding.Show();
+            onboarding.Activate();
+        }
+
         CreateTray();
 
         DispatcherUnhandledException += (_, args) =>
         {
             // оверлей не должен падать от единичного сбоя системного API
-            try
-            {
-                File.AppendAllText(Path.Combine(Path.GetTempPath(), "kapsula_err.txt"),
-                    args.Exception.ToString() + "\n---\n");
-            }
-            catch
-            {
-            }
+            LogError(args.Exception);
             args.Handled = true;
+        };
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+        {
+            if (args.ExceptionObject is Exception exception) LogError(exception);
         };
     }
 
@@ -88,6 +106,10 @@ public partial class App : Application
         menu.Items.Add("Раскрыть", null, (_, _) => _window?.Expand());
         menu.Items.Add("Настройки…", null, (_, _) => OpenSettings());
         menu.Items.Add(new WinForms.ToolStripSeparator());
+        menu.Items.Add("Копия данных…", null, (_, _) => ExportData());
+        menu.Items.Add("Восстановить из копии…", null, (_, _) => ImportData());
+        menu.Items.Add("Журнал ошибок", null, (_, _) => OpenLog());
+        menu.Items.Add(new WinForms.ToolStripSeparator());
         menu.Items.Add("Выход", null, (_, _) => Shutdown());
 
         _tray.ContextMenuStrip = menu;
@@ -101,6 +123,76 @@ public partial class App : Application
         window.Saved += () => _window.ApplySettings();
         window.Show();
         window.Activate();
+    }
+
+    /// <summary>Сложить настройки, заметки, буфер и историю чата в один архив.</summary>
+    private void ExportData()
+    {
+        var dialog = new WinForms.SaveFileDialog
+        {
+            Title = "Сохранить копию данных Kapsula",
+            Filter = "Архив данных (*.zip)|*.zip",
+            FileName = Path.GetFileName(BackupService.DefaultPath()),
+            InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+        };
+        if (dialog.ShowDialog() != WinForms.DialogResult.OK) return;
+
+        var (path, error) = BackupService.Export(dialog.FileName);
+        Notify("Kapsula", error is null ? "Копия сохранена: " + path : "Не удалось сохранить: " + error);
+    }
+
+    /// <summary>Развернуть архив обратно и предложить перезапуск.</summary>
+    private void ImportData()
+    {
+        var dialog = new WinForms.OpenFileDialog
+        {
+            Title = "Восстановить данные Kapsula",
+            Filter = "Архив данных (*.zip)|*.zip",
+            InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+        };
+        if (dialog.ShowDialog() != WinForms.DialogResult.OK) return;
+
+        var answer = MessageBox.Show(
+            "Заменить текущие заметки, буфер и настройки данными из копии?",
+            "Kapsula", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (answer != MessageBoxResult.Yes) return;
+
+        var error = BackupService.Import(dialog.FileName);
+        if (error is not null)
+        {
+            Notify("Kapsula", "Не удалось восстановить: " + error);
+            return;
+        }
+
+        var restart = MessageBox.Show("Данные восстановлены. Перезапустить капсулу сейчас?",
+            "Kapsula", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (restart != MessageBoxResult.Yes) return;
+
+        try
+        {
+            var exe = Environment.ProcessPath;
+            if (exe is not null) System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(exe) { UseShellExecute = true });
+        }
+        catch
+        {
+        }
+        Shutdown();
+    }
+
+    private void OpenLog()
+    {
+        try
+        {
+            if (!File.Exists(LogPath))
+            {
+                Notify("Kapsula", "Журнал ошибок пуст");
+                return;
+            }
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(LogPath) { UseShellExecute = true });
+        }
+        catch
+        {
+        }
     }
 
     private static System.Drawing.Icon LoadTrayIcon()
