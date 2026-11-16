@@ -246,12 +246,31 @@ public static class NotesStore
         Save();
     }
 
-    /// <summary>Ставит напоминание на «чч:мм»; если время уже прошло — на завтра.</summary>
-    public static bool Remind(Note note, string time)
+    /// <summary>
+    /// Ставит напоминание. Понимает «18:30», «17.11 09:00», «завтра 9:00».
+    /// Если время сегодня уже прошло — переносит на завтра.
+    /// </summary>
+    public static bool Remind(Note note, string text)
     {
-        if (!TimeSpan.TryParse(time.Replace('.', ':'), out var at)) return false;
-        var when = DateTime.Today + at;
+        var raw = text.Trim().ToLowerInvariant();
+        if (raw.Length == 0) return false;
+
+        var day = DateTime.Today;
+        if (raw.StartsWith("завтра")) day = day.AddDays(1);
+        raw = raw.Replace("завтра", "").Trim();
+
+        var parts = raw.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 2 && DateTime.TryParse(parts[0], out var date))
+        {
+            day = date.Date;
+            raw = parts[1];
+        }
+
+        if (!TimeSpan.TryParse(raw.Replace('.', ':'), out var at)) return false;
+
+        var when = day + at;
         if (when <= DateTime.Now) when = when.AddDays(1);
+
         note.RemindAt = when;
         note.Reminded = false;
         Save();

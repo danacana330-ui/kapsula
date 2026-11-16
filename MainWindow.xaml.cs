@@ -936,6 +936,19 @@ public partial class MainWindow : Window
     private async Task UpdateMediaAsync()
     {
         var info = await _media.ReadAsync();
+
+        // своя музыка играет, а системный хаб про неё не знает — показываем её сами
+        if ((info is null || !info.HasSession) && MusicPlayer.HasTrack && MusicPlayer.IsPlaying)
+        {
+            info = new MediaInfo
+            {
+                Title = MusicPlayer.CurrentTitle,
+                Artist = "своя музыка",
+                App = "Kapsula",
+                IsPlaying = true,
+            };
+        }
+
         if (info is not null) _lastMediaOk = DateTime.UtcNow;
         else if (_hasMedia && (DateTime.UtcNow - _lastMediaOk).TotalSeconds < 2) return; // сбой чтения — не мигаем
         _current = info;
@@ -998,6 +1011,14 @@ public partial class MainWindow : Window
 
     private async void OnPlayPause(object sender, RoutedEventArgs e)
     {
+        if (_current?.App == "Kapsula")
+        {
+            MusicPlayer.Toggle();
+            await Task.Delay(120);
+            await UpdateMediaAsync();
+            return;
+        }
+
         await _media.PlayPauseAsync();
         await Task.Delay(120);
         await UpdateMediaAsync();
@@ -1005,6 +1026,14 @@ public partial class MainWindow : Window
 
     private async void OnNext(object sender, RoutedEventArgs e)
     {
+        if (_current?.App == "Kapsula")
+        {
+            MusicPlayer.Next();
+            await Task.Delay(200);
+            await UpdateMediaAsync();
+            return;
+        }
+
         await _media.NextAsync();
         await Task.Delay(200);
         await UpdateMediaAsync();
@@ -1012,6 +1041,14 @@ public partial class MainWindow : Window
 
     private async void OnPrevious(object sender, RoutedEventArgs e)
     {
+        if (_current?.App == "Kapsula")
+        {
+            MusicPlayer.Previous();
+            await Task.Delay(200);
+            await UpdateMediaAsync();
+            return;
+        }
+
         await _media.PreviousAsync();
         await Task.Delay(200);
         await UpdateMediaAsync();

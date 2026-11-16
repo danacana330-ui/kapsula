@@ -110,7 +110,9 @@ public partial class ScreenshotEditor : Window
             var text = await Services.OcrService.RecognizeAsync(Render());
             if (string.IsNullOrWhiteSpace(text))
             {
-                OcrButton.ToolTip = "текст на снимке не найден";
+                MessageBox.Show(
+                    "Текст на снимке не найден или в Windows не установлен русский пакет распознавания.",
+                    "Kapsula", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -119,7 +121,8 @@ public partial class ScreenshotEditor : Window
         }
         catch (Exception ex)
         {
-            OcrButton.ToolTip = "не получилось: " + ex.Message;
+            MessageBox.Show("Не получилось распознать: " + ex.Message, "Kapsula",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
         }
         finally
         {
