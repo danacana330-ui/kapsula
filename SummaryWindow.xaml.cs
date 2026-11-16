@@ -57,6 +57,35 @@ public partial class SummaryWindow : Window
     private void FillPlans()
     {
         PlansPanel.Children.Clear();
+
+        // напоминания на сегодня — отдельным блоком сверху
+        foreach (var note in NotesStore.Today())
+        {
+            var row = new Grid { Margin = new Thickness(0, 0, 0, 6) };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            var clock = new TextBlock
+            {
+                Text = note.RemindAt!.Value.ToString("HH:mm"),
+                FontSize = 12,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = Theme.AccentBrush,
+                Margin = new Thickness(0, 0, 8, 0),
+            };
+            var text = new TextBlock
+            {
+                Text = note.Text,
+                FontSize = 12.5,
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = Theme.TextBrush,
+            };
+            Grid.SetColumn(text, 1);
+            row.Children.Add(clock);
+            row.Children.Add(text);
+            PlansPanel.Children.Add(row);
+        }
+
         var plans = NotesStore.Notes.Where(n => !n.Done).Take(6).ToList();
 
         if (plans.Count == 0)

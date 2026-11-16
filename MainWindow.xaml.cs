@@ -145,6 +145,17 @@ public partial class MainWindow : Window
             cleanup.Tick += (_, _) => ClipboardStore.Cleanup();
             cleanup.Start();
 
+            var remind = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
+            remind.Tick += (_, _) =>
+            {
+                foreach (var note in NotesStore.TakeDue())
+                {
+                    var text = note.Text.Length > 60 ? note.Text[..60] + "…" : note.Text;
+                    ShowOsd("\uE7ED", "Напоминание", text, sticky: true);
+                }
+            };
+            remind.Start();
+
             _ = CheckUpdateLaterAsync();
         };
     }

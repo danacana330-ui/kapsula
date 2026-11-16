@@ -8,6 +8,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -55,7 +56,24 @@
                     Click="OnAdd" Margin="8,0,0,0"/>
         </Grid>
 
-        <ListBox Grid.Row="3" x:Name="List" Style="{StaticResource PlainList}">
+        <Grid Grid.Row="3" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="Напомнить в" FontSize="11.5" VerticalAlignment="Center"
+                       Foreground="{x:Static local:Theme.DimBrush}"/>
+            <TextBox x:Name="RemindBox" Grid.Column="1" Style="{StaticResource InputBox}" Width="70"
+                     Margin="8,0,0,0" TextAlignment="Center" ToolTip="Время вида 18:30; выбери заметку в списке"/>
+            <Button Grid.Column="2" Style="{StaticResource GhostButton}" Content="Поставить"
+                    Margin="8,0,0,0" Click="OnSetRemind"/>
+            <Button Grid.Column="3" Style="{StaticResource GhostButton}" Content="Снять"
+                    HorizontalAlignment="Left" Margin="8,0,0,0" Click="OnClearRemind"/>
+        </Grid>
+
+        <ListBox Grid.Row="4" x:Name="List" Style="{StaticResource PlainList}">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <Grid>
@@ -72,6 +90,8 @@
                                        Foreground="{x:Static local:Theme.TextBrush}"/>
                             <TextBlock Text="{Binding At, StringFormat='{}{0:dd.MM, HH:mm}'}" FontSize="10.5"
                                        Margin="0,3,0,0" Foreground="{x:Static local:Theme.DimBrush}"/>
+                            <TextBlock Text="{Binding RemindText}" FontSize="10.5" Margin="0,2,0,0"
+                                       Foreground="{x:Static local:Theme.AccentBrush}"/>
                         </StackPanel>
                         <Button Grid.Column="2" Style="{StaticResource IconButton}" Click="OnDelete"
                                 Tag="{Binding}" ToolTip="Удалить">

@@ -141,5 +141,23 @@ public partial class NotesPanel : UserControl
         }
     }
 
+    private void OnSetRemind(object sender, RoutedEventArgs e)
+    {
+        if (List.SelectedItem is not Note note)
+        {
+            RemindBox.ToolTip = "Сначала выбери заметку в списке";
+            return;
+        }
+
+        if (NotesStore.Remind(note, RemindBox.Text.Trim())) Refresh();
+    }
+
+    private void OnClearRemind(object sender, RoutedEventArgs e)
+    {
+        if (List.SelectedItem is not Note note) return;
+        NotesStore.ClearRemind(note);
+        Refresh();
+    }
+
     private void OnBack(object sender, RoutedEventArgs e) => Back?.Invoke();
 }

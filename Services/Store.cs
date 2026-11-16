@@ -181,6 +181,15 @@ public sealed class Note
     public string Folder { get; set; } = "Общее";
     public DateTime At { get; set; } = DateTime.Now;
     public bool Done { get; set; }
+    /// <summary>Когда напомнить об этой заметке; null — напоминания нет.</summary>
+    public DateTime? RemindAt { get; set; }
+    /// <summary>О напоминании уже сообщили.</summary>
+    public bool Reminded { get; set; }
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string RemindText => RemindAt is { } at
+        ? "напомню " + (at.Date == DateTime.Today ? at.ToString("HH:mm") : at.ToString("dd.MM HH:mm"))
+        : "";
 }
 
 public static class NotesStore
@@ -233,6 +242,43 @@ public static class NotesStore
         Notes.Remove(note);
         Save();
     }
+
+    /// <summary>Ставит напоминание на «чч:мм»; если время уже прошло — на завтра.</summary>
+    public static bool Remind(Note note, string time)
+    {
+        if (!TimeSpan.TryParse(time.Replace('.', ':'), out var at)) return false;
+        var when = DateTime.Today + at;
+        if (when <= DateTime.Now) when = when.AddDays(1);
+        note.RemindAt = when;
+        note.Reminded = false;
+        Save();
+        return true;
+    }
+
+    public static void ClearRemind(Note note)
+    {
+        note.RemindAt = null;
+        note.Reminded = false;
+        Save();
+    }
+
+    /// <summary>Заметки, о которых пора напомнить, — и сразу помечаем, чтобы не повторялись.</summary>
+    public static List<Note> TakeDue()
+    {
+        var due = Notes.Where(n => n.RemindAt is { } at && !n.Reminded && at <= DateTime.Now).ToList();
+        foreach (var note in due) note.Reminded = true;
+        if (due.Count > 0) Save();
+        return due;
+    }
+
+    public static IEnumerable<Note> Today()
+    {
+        var today = DateTime.Today;
+        return Notes.Where(n => n.RemindAt is { } at && at.Date == today).OrderBy(n => n.RemindAt);
+    }
+
+    public static IEnumerable<Note> Latest(int count) =>
+        Notes.OrderByDescending(n => n.At).Take(count);
 
     private static void Save() => Store.Save("notes.json", Notes.ToList());
 }
