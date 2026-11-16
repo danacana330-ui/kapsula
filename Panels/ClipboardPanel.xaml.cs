@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using Kapsula.Services;
 
 namespace Kapsula.Panels;
@@ -44,6 +45,14 @@ public partial class ClipboardPanel : UserControl
     }
 
     private void OnSearchChanged(object sender, TextChangedEventArgs e) => Filter(Search.Text);
+
+    /// <summary>Кнопка действия под строкой — не выбирает строку, а сразу делает дело.</summary>
+    private void OnSmart(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: SmartAction action }) return;
+        e.Handled = true;
+        SmartText.Perform(action);
+    }
 
     private void OnPick(object sender, SelectionChangedEventArgs e)
     {

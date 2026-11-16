@@ -50,6 +50,9 @@ public sealed class ClipItem
     /// <summary>Закреплённое не вымывается из истории и всегда сверху.</summary>
     public bool Pinned { get; set; }
     public bool IsLink => Text.StartsWith("http", StringComparison.OrdinalIgnoreCase);
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public List<SmartAction> Actions => SmartText.Detect(Text);
 }
 
 public static class ClipboardStore

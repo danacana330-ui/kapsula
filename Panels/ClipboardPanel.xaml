@@ -48,6 +48,23 @@
                                        Foreground="{x:Static local:Theme.TextBrush}"/>
                             <TextBlock Text="{Binding At, StringFormat='{}{0:HH:mm}'}" FontSize="10.5"
                                        Margin="0,4,0,0" Foreground="{x:Static local:Theme.DimBrush}"/>
+                            <ItemsControl ItemsSource="{Binding Actions}" Margin="0,4,0,0">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Content="{Binding Title}" Tag="{Binding}"
+                                                PreviewMouseLeftButtonDown="OnSmart"
+                                                Margin="0,0,6,4" Padding="8,2" FontSize="10.5" Cursor="Hand"
+                                                Foreground="{x:Static local:Theme.AccentBrush}"
+                                                Background="{x:Static local:Theme.CardHoverBrush}"
+                                                BorderThickness="0"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </StackPanel>
                         <Button Grid.Column="1" Style="{StaticResource IconButton}" Click="OnPin"
                                 Tag="{Binding}" ToolTip="Закрепить">
