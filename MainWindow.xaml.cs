@@ -533,6 +533,9 @@ public partial class MainWindow : Window
             case "summary":
                 ShowSummary();
                 break;
+            case "appearance":
+                OpenPanel(new AppearancePanel());
+                break;
         }
     }
 
@@ -548,6 +551,7 @@ public partial class MainWindow : Window
             case LauncherPanel p: p.Back += ClosePanel; break;
             case QuickPanel p: p.Back += ClosePanel; break;
             case TimerPanel p: p.Back += ClosePanel; break;
+            case AppearancePanel p: p.Back += ClosePanel; break;
         }
 
         PanelHost.Content = panel;
