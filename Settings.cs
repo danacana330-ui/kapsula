@@ -50,7 +50,7 @@ public sealed class AppSettings
     public string RecordFolder { get; set; } = "";
     public List<string> HomeTiles { get; set; } = new()
     {
-        "clipboard", "shelf", "notes", "ai", "shot", "weather", "quick", "timer", "record", "summary", "appearance",
+        "clipboard", "shelf", "notes", "ai", "shot", "weather", "quick", "timer", "record", "summary", "appearance", "system",
     };
 
     /// <summary>Версия формата настроек: по ней досыпаем новые пункты в старые файлы.</summary>

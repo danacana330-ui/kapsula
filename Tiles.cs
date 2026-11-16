@@ -22,6 +22,7 @@ public static class Tiles
         new("record", "Запись", "\uE7C8"),
         new("summary", "Сводка", "\uE787"),
         new("appearance", "Вид", "\uE790"),
+        new("system", "Система", "\uE950"),
     };
 
     public static Button Create(TileDef def, Style tileStyle, RoutedEventHandler onClick, out TextBlock label)

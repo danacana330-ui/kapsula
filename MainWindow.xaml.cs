@@ -553,6 +553,9 @@ public partial class MainWindow : Window
             case "appearance":
                 OpenPanel(new AppearancePanel());
                 break;
+            case "system":
+                OpenPanel(new SystemPanel());
+                break;
         }
     }
 
@@ -569,6 +572,7 @@ public partial class MainWindow : Window
             case QuickPanel p: p.Back += ClosePanel; break;
             case TimerPanel p: p.Back += ClosePanel; break;
             case AppearancePanel p: p.Back += ClosePanel; break;
+            case SystemPanel p: p.Back += ClosePanel; break;
         }
 
         PanelHost.Content = panel;
@@ -779,6 +783,8 @@ public partial class MainWindow : Window
     }
 
     private DateTime _lastPrivacyCheck;
+    private bool? _lastCharging;
+    private bool _fullShown;
 
     private void CheckIndicators()
     {
@@ -791,6 +797,19 @@ public partial class MainWindow : Window
         if (caps != _lastCaps)
             ShowOsd("\uE8F6", "Caps Lock", caps ? "включён" : "выключен");
         _lastCaps = caps;
+
+        // включили или вынули зарядку — короткая плашка в стиле капсулы
+        var (battery, charging, hasBattery) = Services.SysInfo.Battery();
+        if (hasBattery && _lastCharging is { } was && was != charging)
+            ShowOsd(charging ? "\uE83E" : "\uE83F", "Батарея",
+                charging ? $"заряжается, {battery}%" : $"от сети отключена, {battery}%");
+        if (hasBattery && charging && battery >= 100 && _fullShown == false)
+        {
+            ShowOsd("\uE73E", "Батарея", "заряжена");
+            _fullShown = true;
+        }
+        if (!charging) _fullShown = false;
+        if (hasBattery) _lastCharging = charging;
 
         foreach (var mascot in new[] { IdleMascot, MusicMascot, BigMascot })
             mascot.Scared = caps;

@@ -42,6 +42,7 @@ public sealed class LauncherService
         ("Полка файлов", "shelf", "полка файлы shelf"),
         ("Сводка дня", "summary", "сводка дня summary"),
         ("Вид и поведение", "appearance", "вид внешний оформление тема appearance"),
+        ("Компьютер", "system", "система процессор память батарея компьютер system"),
         ("Настройки Kapsula", "settings", "настройки settings параметры"),
     };
 
