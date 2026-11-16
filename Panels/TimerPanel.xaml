@@ -69,20 +69,29 @@
             <StackPanel Grid.Column="1" Margin="12,0,0,0">
                 <TextBlock Text="Быстрый выбор" FontSize="11" Margin="2,0,0,8"
                            Foreground="{x:Static local:Theme.DimBrush}"/>
-                <UniformGrid Columns="2" Rows="2">
+                <UniformGrid Columns="2" Rows="3">
                     <Button Style="{StaticResource Tile}" Margin="0,0,6,6" Tag="1" Click="OnPreset">
                         <TextBlock Text="1 минута" FontSize="12.5"/>
                     </Button>
                     <Button Style="{StaticResource Tile}" Margin="6,0,0,6" Tag="5" Click="OnPreset">
                         <TextBlock Text="5 минут" FontSize="12.5"/>
                     </Button>
-                    <Button Style="{StaticResource Tile}" Margin="0,6,6,0" Tag="15" Click="OnPreset">
+                    <Button Style="{StaticResource Tile}" Margin="0,6,6,6" Tag="15" Click="OnPreset">
                         <TextBlock Text="15 минут" FontSize="12.5"/>
                     </Button>
-                    <Button Style="{StaticResource Tile}" Margin="6,6,0,0" Tag="25" Click="OnPreset">
+                    <Button Style="{StaticResource Tile}" Margin="6,6,0,6" Tag="25" Click="OnPreset">
                         <TextBlock Text="25 минут" FontSize="12.5"/>
                     </Button>
+                    <Button Style="{StaticResource Tile}" Margin="0,6,6,0" Click="OnFocus">
+                        <TextBlock Text="Фокус 25" FontSize="12.5"/>
+                    </Button>
+                    <Button Style="{StaticResource Tile}" Margin="6,6,0,0" Click="OnBreak">
+                        <TextBlock Text="Перерыв 5" FontSize="12.5"/>
+                    </Button>
                 </UniformGrid>
+
+                <TextBlock x:Name="CyclesText" FontSize="11" Margin="2,10,0,0"
+                           Foreground="{x:Static local:Theme.DimBrush}"/>
 
                 <TextBlock Text="Идут сейчас" FontSize="11" Margin="2,14,0,6"
                            Foreground="{x:Static local:Theme.DimBrush}"/>

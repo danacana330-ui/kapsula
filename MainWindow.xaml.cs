@@ -23,6 +23,7 @@ public partial class MainWindow : Window
     private const int HOTKEY_SHOT_ALT = 4;
     private const int HOTKEY_RECORD_ALT = 5;
     private const int HOTKEY_SEARCH = 6;
+    private const int HOTKEY_NOTE = 7;
 
     private readonly MediaService _media = new();
     private readonly RecordingService _recorder = new();
@@ -189,6 +190,7 @@ public partial class MainWindow : Window
         NativeMethods.RegisterHotKey(handle, HOTKEY_SHOT_ALT, NativeMethods.MOD_CONTROL | NativeMethods.MOD_SHIFT, NativeMethods.VK_S);
         NativeMethods.RegisterHotKey(handle, HOTKEY_RECORD_ALT, NativeMethods.MOD_CONTROL | NativeMethods.MOD_SHIFT, NativeMethods.VK_R);
         NativeMethods.RegisterHotKey(handle, HOTKEY_SEARCH, NativeMethods.MOD_CONTROL, NativeMethods.VK_K);
+        NativeMethods.RegisterHotKey(handle, HOTKEY_NOTE, NativeMethods.MOD_CONTROL | NativeMethods.MOD_ALT, NativeMethods.VK_N);
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -230,6 +232,10 @@ public partial class MainWindow : Window
                 case HOTKEY_RECORD:
                 case HOTKEY_RECORD_ALT:
                     ToggleRecording();
+                    handled = true;
+                    break;
+                case HOTKEY_NOTE:
+                    OpenTile("notes");
                     handled = true;
                     break;
             }

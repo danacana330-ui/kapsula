@@ -22,6 +22,9 @@ public sealed class AppSettings
     public bool SkipPasswords { get; set; } = true;
     /// <summary>Через сколько часов вычищать историю буфера; 0 — не чистить.</summary>
     public int ClipboardCleanupHours { get; set; } = 72;
+    /// <summary>Сколько циклов фокуса сделано и за какой день считали.</summary>
+    public int FocusCycles { get; set; }
+    public string FocusDay { get; set; } = "";
     public bool ShowLiquidEdge { get; set; } = true;
     public double Scale { get; set; } = 1.0;
     public string UiFont { get; set; } = "Segoe UI Variable Display";

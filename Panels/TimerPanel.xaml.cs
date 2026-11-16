@@ -86,6 +86,29 @@ public partial class TimerPanel : UserControl
         return parts.Count > 0 ? string.Join(" ", parts) : "таймер";
     }
 
+    // Фокус-таймер: 25 минут работы, 5 минут перерыва; считаем циклы за сегодня.
+    private void OnFocus(object sender, RoutedEventArgs e)
+    {
+        TimerService.Start(TimeSpan.FromMinutes(25), "фокус");
+
+        var today = DateTime.Today.ToString("yyyy-MM-dd");
+        if (App.Settings.FocusDay != today)
+        {
+            App.Settings.FocusDay = today;
+            App.Settings.FocusCycles = 0;
+        }
+
+        App.Settings.FocusCycles++;
+        App.Settings.Save();
+        Render();
+    }
+
+    private void OnBreak(object sender, RoutedEventArgs e)
+    {
+        TimerService.Start(TimeSpan.FromMinutes(5), "перерыв");
+        Render();
+    }
+
     private void OnStop(object sender, RoutedEventArgs e)
     {
         TimerService.Stop();
@@ -110,6 +133,8 @@ public partial class TimerPanel : UserControl
         };
 
         ActiveList.Children.Clear();
+        var cycles = App.Settings.FocusDay == DateTime.Today.ToString("yyyy-MM-dd") ? App.Settings.FocusCycles : 0;
+        CyclesText.Text = cycles == 0 ? "" : $"циклов фокуса сегодня: {cycles}";
         foreach (var entry in TimerService.Items.OrderBy(e => e.End))
         {
             var grid = new Grid { Margin = new Thickness(0, 0, 0, 6) };
