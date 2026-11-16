@@ -48,9 +48,11 @@ public sealed class AppSettings
     public string SummaryTime { get; set; } = "09:00";
     public string SummaryShownOn { get; set; } = "";
     public string RecordFolder { get; set; } = "";
+    /// <summary>Папка со своей музыкой для встроенного плеера; пусто — «Моя музыка».</summary>
+    public string MusicFolder { get; set; } = "";
     public List<string> HomeTiles { get; set; } = new()
     {
-        "clipboard", "shelf", "notes", "ai", "shot", "weather", "quick", "timer", "record", "summary", "appearance", "system",
+        "clipboard", "shelf", "notes", "ai", "shot", "weather", "quick", "timer", "record", "summary", "appearance", "system", "music",
     };
 
     /// <summary>Версия формата настроек: по ней досыпаем новые пункты в старые файлы.</summary>

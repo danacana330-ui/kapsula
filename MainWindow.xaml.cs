@@ -556,6 +556,9 @@ public partial class MainWindow : Window
             case "system":
                 OpenPanel(new SystemPanel());
                 break;
+            case "music":
+                OpenPanel(new MusicPanel());
+                break;
         }
     }
 
@@ -573,6 +576,7 @@ public partial class MainWindow : Window
             case TimerPanel p: p.Back += ClosePanel; break;
             case AppearancePanel p: p.Back += ClosePanel; break;
             case SystemPanel p: p.Back += ClosePanel; break;
+            case MusicPanel p: p.Back += ClosePanel; break;
         }
 
         PanelHost.Content = panel;

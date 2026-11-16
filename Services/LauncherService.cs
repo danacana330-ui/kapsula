@@ -43,6 +43,7 @@ public sealed class LauncherService
         ("Сводка дня", "summary", "сводка дня summary"),
         ("Вид и поведение", "appearance", "вид внешний оформление тема appearance"),
         ("Компьютер", "system", "система процессор память батарея компьютер system"),
+        ("Музыка", "music", "музыка плеер треки музыка music"),
         ("Настройки Kapsula", "settings", "настройки settings параметры"),
     };
 
