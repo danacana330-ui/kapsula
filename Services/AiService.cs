@@ -20,7 +20,91 @@ public sealed class OllamaModel
         : $"{SizeBytes / 1_000_000.0:0} МБ";
 }
 
-/// <summary>Локальный ИИ через Ollama: список моделей, чат потоком, скачивание моделей.</summary>
+/// <summary>Бесплатные облачные модели через локальный шлюз: быстро, но нужен интернет.</summary>
+public static class FreeCloud
+{
+    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromMinutes(5) };
+
+    /// <summary>Шлюз бесплатных облачных моделей (Desktop\FreeLLM). null — шлюз не поднят.</summary>
+    public static async Task<List<OllamaModel>> ListAsync(int port)
+    {
+        var list = new List<OllamaModel>();
+        try
+        {
+            using var doc = JsonDocument.Parse(await Http.GetStringAsync($"http://127.0.0.1:{port}/api/tags"));
+            foreach (var m in doc.RootElement.GetProperty("models").EnumerateArray())
+            {
+                var name = m.GetProperty("name").GetString() ?? "";
+                if (!name.StartsWith("free-", StringComparison.Ordinal)) continue;
+                list.Add(new OllamaModel { Name = name });
+            }
+        }
+        catch
+        {
+        }
+        return list;
+    }
+
+    /// <summary>Потоковый чат через шлюз — тот же SSE, что отдаёт llama-server для мини-моделей.</summary>
+    public static async Task<string> ChatAsync(int port, string model, IReadOnlyList<AiMessage> messages,
+        Action<string> onToken, CancellationToken token)
+    {
+        var payload = JsonSerializer.Serialize(new
+        {
+            model,
+            stream = true,
+            messages = messages.Select(m => new { role = m.Role, content = m.Content }).ToArray(),
+        });
+
+        var full = new StringBuilder();
+        try
+        {
+            using var request = new HttpRequestMessage(
+                HttpMethod.Post, $"http://127.0.0.1:{port}/v1/chat/completions")
+            {
+                Content = new StringContent(payload, Encoding.UTF8, "application/json"),
+            };
+            using var response = await Http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token);
+            response.EnsureSuccessStatusCode();
+
+            await using var stream = await response.Content.ReadAsStreamAsync(token);
+            using var reader = new StreamReader(stream);
+            while (!reader.EndOfStream)
+            {
+                token.ThrowIfCancellationRequested();
+                var line = await reader.ReadLineAsync(token);
+                if (string.IsNullOrWhiteSpace(line) || !line.StartsWith("data:", StringComparison.Ordinal)) continue;
+                var json = line[5..].Trim();
+                if (json == "[DONE]") break;
+                try
+                {
+                    using var doc = JsonDocument.Parse(json);
+                    if (!doc.RootElement.TryGetProperty("choices", out var choices) || choices.GetArrayLength() == 0)
+                        continue;
+                    if (!choices[0].TryGetProperty("delta", out var delta)) continue;
+                    if (!delta.TryGetProperty("content", out var content)) continue;
+                    var piece = content.GetString() ?? "";
+                    if (piece.Length == 0) continue;
+                    full.Append(piece);
+                    onToken(piece);
+                }
+                catch (JsonException)
+                {
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            full.Append("\n[остановлено]");
+        }
+        catch (Exception ex)
+        {
+            full.Append("\n[бесплатная модель не ответила: " + ex.Message + "]");
+        }
+        return full.ToString();
+    }
+}
+
 public sealed class AiService
 {
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromMinutes(10) };

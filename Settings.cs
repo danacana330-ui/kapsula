@@ -25,6 +25,8 @@ public sealed class AppSettings
     public string ClockFormat { get; set; } = "HH:mm";
     public string AiModel { get; set; } = "qwen3:4b";
     public string AiEndpoint { get; set; } = "http://localhost:11434";
+    /// <summary>Порт шлюза бесплатных облачных моделей (Desktop\FreeLLM\gateway.py).</summary>
+    public int AiGatewayPort { get; set; } = 8090;
     public string WeatherCity { get; set; } = "Москва";
     public int VolumeStep { get; set; } = 2;
     public bool ShowOsd { get; set; } = true;

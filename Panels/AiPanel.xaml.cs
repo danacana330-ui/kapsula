@@ -121,11 +121,23 @@ public partial class AiPanel : UserControl
         }
 
         ModelsList.ItemsSource = choices;
+
+        var cloud = await FreeCloud.ListAsync(_settings.AiGatewayPort);
+        choices.AddRange(cloud.Select(m => new AiChoice
+        {
+            Kind = "cloud",
+            Id = m.Name,
+            Title = CloudTitle(m.Name),
+            Subtitle = "бесплатно · облако",
+        }));
+        ModelsList.ItemsSource = null;
+        ModelsList.ItemsSource = choices;
+
         HintText.Text = _ollamaOk ? "Ollama на связи" : "своя мини-модель";
 
         var installed = choices.FirstOrDefault(c => c.Kind == "mini" && c.Mini is not null &&
                                                    MiniModelStore.IsInstalled(c.Mini));
-        var saved = choices.FirstOrDefault(c => c.Kind == "ollama" && c.Id == _settings.AiModel);
+        var saved = choices.FirstOrDefault(c => c.Kind is "ollama" or "cloud" && c.Id == _settings.AiModel);
         ModelsList.SelectedItem = installed ?? saved ?? choices.FirstOrDefault();
     }
 
@@ -134,7 +146,7 @@ public partial class AiPanel : UserControl
         _choice = ModelsList.SelectedItem as AiChoice;
         UpdateMiniControls();
 
-        if (_choice is { Kind: "ollama" })
+        if (_choice is { Kind: "ollama" } or { Kind: "cloud" })
         {
             _settings.AiModel = _choice.Id;
             _settings.Save();
@@ -143,7 +155,23 @@ public partial class AiPanel : UserControl
         OllamaBanner.Visibility = _ollamaOk && _choice is { Kind: "mini" }
             ? Visibility.Visible
             : Visibility.Collapsed;
+
+        if (_choice is { Kind: "cloud" })
+            HintText.Text = "бесплатная облачная модель · нужен интернет";
     }
+
+    private static string CloudTitle(string id) => id switch
+    {
+        "free-auto" => "Бесплатная · авто",
+        "free-llama-70b" => "Бесплатная · Llama 70B",
+        "free-gpt-oss-120b" => "Бесплатная · GPT-OSS 120B",
+        "free-gpt-oss-20b" => "Бесплатная · GPT-OSS 20B",
+        "free-qwen3.5" => "Бесплатная · Qwen3.5 397B",
+        "free-qwen3.5-9b" => "Бесплатная · Qwen3.5 9B",
+        "free-mistral" => "Бесплатная · Mistral 24B",
+        "free-deepseek" => "Бесплатная · DeepSeek",
+        _ => id,
+    };
 
     private void UpdateMiniControls()
     {
@@ -249,7 +277,15 @@ public partial class AiPanel : UserControl
         try
         {
             string full;
-            if (_choice.Kind == "ollama")
+            if (_choice.Kind == "cloud")
+            {
+                full = await FreeCloud.ChatAsync(_settings.AiGatewayPort, _choice.Id, _history, piece =>
+                {
+                    answer.Text += piece;
+                    ChatScroll.ScrollToEnd();
+                }, _cts.Token);
+            }
+            else if (_choice.Kind == "ollama")
             {
                 full = await _ai.ChatAsync(_choice.Id, _history, piece =>
                 {
