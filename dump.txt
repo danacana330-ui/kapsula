@@ -1,0 +1,68 @@
+======================================================================
+ОКНО: Kapsula
+======================================================================
+Kapsula
+  <50025>
+    
+      
+    
+    ИИ
+    бесплатная облачная модель · нужен интернет
+    Новый чат
+      Новый чат
+    Модели
+    <50008>
+      Kapsula.Panels.AiChoice
+        Qwen2.5 1.5B
+        1,0 ГБ · на компьютере
+      Kapsula.Panels.AiChoice
+        Qwen2.5 3B
+        умнее · 2,0 ГБ · не скачана
+      Kapsula.Panels.AiChoice
+        Бесплатная · авто
+        облако · нужен интернет
+      Kapsula.Panels.AiChoice
+        gemma3:4b
+        3,4 ГБ · Ollama
+      Kapsula.Panels.AiChoice
+        gpt-oss:120b-cloud
+        0 МБ · Ollama
+      Kapsula.Panels.AiChoice
+        llama3:latest
+        4,7 ГБ · Ollama
+      Kapsula.Panels.AiChoice
+        qwen2.5:3b
+        1,9 ГБ · Ollama
+    12 ГБ ОЗУ · советуем qwen2.5:3b (небольшая, отвечает быстро)
+    <50020>
+    <50004>
+    Скачать в Ollama
+      Скачать в Ollama
+    Свой сервер
+      Свой сервер
+        Свой сервер
+    <50033>
+      <50008>
+        Kapsula.Panels.ChatBubble
+          привет
+          <50020>
+        Kapsula.Panels.ChatBubble
+          Привет! Давай поговорим.
+          <50020>
+        Kapsula.Panels.ChatBubble
+          что ты умеешь? кратко
+          <50020>
+        Kapsula.Panels.ChatBubble
+          Мои функции включают поиск информации, отправку сообщений и помощь приложения Kapsula.
+          <50020>
+        Kapsula.Panels.ChatBubble
+          таймер на 2 минуты
+          <50020>
+        Kapsula.Panels.ChatBubble
+          Таймер на 2 мин поставлен.
+          команда
+    <50004>
+    Заново
+      Заново
+    Отправить
+      Отправить

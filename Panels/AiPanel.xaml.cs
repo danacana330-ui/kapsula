@@ -120,25 +120,7 @@ public partial class AiPanel : UserControl
             });
         }
 
-        _ollamaOk = await _ai.IsRunningAsync();
-        if (_ollamaOk)
-        {
-            var models = (await _ai.ListAsync())
-                .Where(m => !m.Name.Contains("embed", StringComparison.OrdinalIgnoreCase))
-                .ToList();
-            foreach (var m in models)
-            {
-                choices.Add(new AiChoice
-                {
-                    Kind = "ollama",
-                    Id = m.Name,
-                    Title = m.Name,
-                    Subtitle = $"{m.SizeText} · Ollama",
-                });
-            }
-        }
-
-        // Облако: одна строка «авто», без списка названий — они только мешают глазу.
+        // Облако: одна строка «авто» сразу после мини-моделей, без списка названий.
         var cloud = await FreeCloud.ListAsync(_settings.AiGatewayPort);
         _cloudOk = cloud.Any(m => m.Name == "free-auto");
         if (_cloudOk)
@@ -150,6 +132,26 @@ public partial class AiPanel : UserControl
                 Title = "Бесплатная · авто",
                 Subtitle = "облако · нужен интернет",
             });
+        }
+
+        _ollamaOk = await _ai.IsRunningAsync();
+        if (_ollamaOk)
+        {
+            var models = (await _ai.ListAsync())
+                .Where(m => !m.Name.Contains("embed", StringComparison.OrdinalIgnoreCase))
+                // free-* — модели шлюза облака, выше они показаны одной строкой
+                .Where(m => !m.Name.StartsWith("free-", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            foreach (var m in models)
+            {
+                choices.Add(new AiChoice
+                {
+                    Kind = "ollama",
+                    Id = m.Name,
+                    Title = m.Name,
+                    Subtitle = $"{m.SizeText} · Ollama",
+                });
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(_settings.AiServerUrl))

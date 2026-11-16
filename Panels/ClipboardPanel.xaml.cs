@@ -16,8 +16,14 @@ public partial class ClipboardPanel : UserControl
         InitializeComponent();
         List.ItemsSource = _view;
         Filter("");
+        // панель открыта, а в буфер что-то скопировали — показываем сразу
+        ClipboardStore.Items.CollectionChanged += OnItemsChanged;
+        Unloaded += (_, _) => ClipboardStore.Items.CollectionChanged -= OnItemsChanged;
         Loaded += (_, _) => Search.Focus();
     }
+
+    private void OnItemsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e) =>
+        Filter(Search.Text);
 
     private void Filter(string query)
     {
