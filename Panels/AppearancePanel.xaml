@@ -71,6 +71,8 @@
                           Foreground="{x:Static local:Theme.TextBrush}"/>
                 <CheckBox x:Name="MotionBox" Content="Меньше анимации" Margin="0,0,0,10"
                           Foreground="{x:Static local:Theme.TextBrush}"/>
+                <CheckBox x:Name="LyricsBox" Content="Строка текста песни в шапке" Margin="0,0,0,10"
+                          Foreground="{x:Static local:Theme.TextBrush}"/>
                 <CheckBox x:Name="FullscreenBox" Content="Прятать в полноэкранных видео и играх"
                           Margin="0,0,0,16" Foreground="{x:Static local:Theme.TextBrush}"/>
 

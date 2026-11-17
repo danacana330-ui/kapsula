@@ -45,6 +45,8 @@ public sealed class AppSettings
     /// <summary>Яркость экрана в процентах: подсветка или, если панель её не даёт, программное затемнение.</summary>
     public int ScreenBrightness { get; set; } = 100;
     public bool ShowOsd { get; set; } = true;
+    /// <summary>Показывать строку текста песни под треком в шапке капсулы.</summary>
+    public bool ShowLyrics { get; set; } = true;
     public bool RecordSystemAudio { get; set; } = true;
     public bool SummaryEnabled { get; set; } = true;
     public string SummaryTime { get; set; } = "09:00";

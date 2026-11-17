@@ -9,6 +9,8 @@ public sealed class MediaInfo
     public string App { get; init; } = "";
     public bool IsPlaying { get; init; }
     public byte[]? Art { get; init; }
+    public TimeSpan Position { get; init; }
+    public TimeSpan Duration { get; init; }
     public bool HasSession => Title.Length > 0;
 }
 
@@ -88,6 +90,8 @@ public sealed class MediaService
                 art = await ReadThumbnailAsync(props);
             }
 
+            var timeline = session.GetTimelineProperties();
+
             return new MediaInfo
             {
                 Title = title,
@@ -95,6 +99,8 @@ public sealed class MediaService
                 App = FriendlyApp(app),
                 IsPlaying = info?.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing,
                 Art = art,
+                Position = timeline?.Position ?? TimeSpan.Zero,
+                Duration = timeline is null ? TimeSpan.Zero : timeline.EndTime - timeline.StartTime,
             };
         }
         catch

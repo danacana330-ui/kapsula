@@ -952,6 +952,8 @@ public partial class MainWindow : Window
                 Artist = "своя музыка",
                 App = "Kapsula",
                 IsPlaying = true,
+                Position = MusicPlayer.Position,
+                Duration = MusicPlayer.Length,
             };
         }
 
@@ -989,6 +991,10 @@ public partial class MainWindow : Window
             ArtBig.Background = Theme.AccentGradient;
             ArtFallback.Visibility = Visibility.Visible;
             ArtBigFallback.Visibility = Visibility.Visible;
+            _lyricKey = "";
+            _lyrics = null;
+            LyricsText.Text = "";
+            LyricsText.Visibility = Visibility.Collapsed;
             return;
         }
 
@@ -997,6 +1003,8 @@ public partial class MainWindow : Window
         TitleBig.Text = info.Title;
         ArtistBig.Text = string.IsNullOrWhiteSpace(info.Artist) ? info.App : info.Artist;
         PlayPauseText.Text = info.IsPlaying ? "\uE769" : "\uE768";
+
+        UpdateLyricLine(info);
 
         if (info.Art is not null)
         {
@@ -1014,6 +1022,62 @@ public partial class MainWindow : Window
     }
 
     // ── управление ───────────────────────────────────────────────────────────
+
+    private Lyrics? _lyrics;
+    private string _lyricKey = "";
+
+    private void UpdateLyricLine(MediaInfo info)
+    {
+        // у своей музыки артиста в хабе нет — берём его из имени файла «Исполнитель - Название»
+        var artist = info.Artist;
+        var title = info.Title;
+        if (info.App == "Kapsula")
+        {
+            var dash = title.IndexOf(" - ", StringComparison.Ordinal);
+            if (dash > 0)
+            {
+                artist = title[..dash].Trim();
+                title = title[(dash + 3)..].Trim();
+            }
+            else
+            {
+                artist = "";
+            }
+        }
+
+        var key = artist + "|" + title;
+        if (key != _lyricKey)
+        {
+            _lyricKey = key;
+            _lyrics = null;
+            LyricsText.Text = "";
+            LyricsText.Visibility = Visibility.Collapsed;
+            if (_settings.ShowLyrics) _ = LoadLyricsAsync(key, artist, title);
+        }
+
+        if (!_settings.ShowLyrics || _lyrics is null)
+        {
+            LyricsText.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        var line = _lyrics.LineAt(info.Position.TotalSeconds);
+        LyricsText.Text = line;
+        LyricsText.Visibility = line.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private async Task LoadLyricsAsync(string key, string artist, string title)
+    {
+        try
+        {
+            var lyrics = await LyricsService.GetAsync(artist, title);
+            if (key != _lyricKey) return; // трек уже сменился
+            _lyrics = lyrics;
+        }
+        catch
+        {
+        }
+    }
 
     private async void OnPlayPause(object sender, RoutedEventArgs e)
     {

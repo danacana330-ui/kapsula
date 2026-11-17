@@ -73,6 +73,9 @@
                                    FontSize="10.5" Margin="0,1,0,0"
                                    Foreground="{x:Static local:Theme.DimBrush}"
                                    TextTrimming="CharacterEllipsis"/>
+                        <TextBlock x:Name="LyricsText" Text="" FontSize="9" Margin="0,1,0,0"
+                                   Foreground="{x:Static local:Theme.AccentBrush}"
+                                   TextTrimming="CharacterEllipsis" Visibility="Collapsed"/>
                     </StackPanel>
 
                     <local:Mascot Grid.Column="2" x:Name="MusicMascot" Width="34" Height="28"

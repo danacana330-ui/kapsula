@@ -53,6 +53,10 @@ public partial class AppearancePanel : UserControl
         MotionBox.Checked += (_, _) => Save();
         MotionBox.Unchecked += (_, _) => Save();
 
+        LyricsBox.IsChecked = _s.ShowLyrics;
+        LyricsBox.Checked += (_, _) => Save();
+        LyricsBox.Unchecked += (_, _) => Save();
+
         FullscreenBox.IsChecked = _s.HideInFullscreen;
         FullscreenBox.Checked += (_, _) => Save();
         FullscreenBox.Unchecked += (_, _) => Save();
@@ -78,6 +82,7 @@ public partial class AppearancePanel : UserControl
         _s.LightTheme = LightBox.IsChecked == true;
         _s.FollowCursor = CursorBox.IsChecked == true;
         _s.ReduceMotion = MotionBox.IsChecked == true;
+        _s.ShowLyrics = LyricsBox.IsChecked == true;
         _s.HideInFullscreen = FullscreenBox.IsChecked == true;
 
         _s.Save();
