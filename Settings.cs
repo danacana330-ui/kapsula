@@ -47,6 +47,10 @@ public sealed class AppSettings
     public bool ShowOsd { get; set; } = true;
     /// <summary>Показывать строку текста песни под треком в шапке капсулы.</summary>
     public bool ShowLyrics { get; set; } = true;
+    /// <summary>Строка характеристик компьютера сверху в раскрытой капсуле.</summary>
+    public bool ShowPcStats { get; set; }
+    /// <summary>Последний плеер, отдававший трек в медиахаб, — его и запускаем, когда музыки нет.</summary>
+    public string LastMusicApp { get; set; } = "";
     public bool RecordSystemAudio { get; set; } = true;
     public bool SummaryEnabled { get; set; } = true;
     public string SummaryTime { get; set; } = "09:00";
@@ -56,7 +60,7 @@ public sealed class AppSettings
     public string MusicFolder { get; set; } = "";
     public List<string> HomeTiles { get; set; } = new()
     {
-        "clipboard", "shelf", "notes", "ai", "shot", "weather", "quick", "timer", "record", "summary", "appearance", "system", "music",
+        "clipboard", "notes", "ai", "capture", "shelf", "timer", "weather", "quick", "summary", "appearance",
     };
 
     /// <summary>Версия формата настроек: по ней досыпаем новые пункты в старые файлы.</summary>
@@ -94,6 +98,17 @@ public sealed class AppSettings
             settings.HomeTiles ??= new List<string>();
             if (!settings.HomeTiles.Contains("summary")) settings.HomeTiles.Add("summary");
             settings.Version = 2;
+            settings.Save();
+        }
+
+        if (settings.Version < 3)
+        {
+            // 3.0: «Снимок» и «Запись» стали одной плиткой «Захват экрана»,
+            // а «Система» и «Музыка» уехали в другие разделы
+            settings.HomeTiles ??= new List<string>();
+            settings.HomeTiles.RemoveAll(id => id is "system" or "music" or "shot" or "record");
+            if (!settings.HomeTiles.Contains("capture")) settings.HomeTiles.Add("capture");
+            settings.Version = 3;
             settings.Save();
         }
 

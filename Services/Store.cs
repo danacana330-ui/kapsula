@@ -284,6 +284,14 @@ public static class NotesStore
         Save();
     }
 
+    /// <summary>Напоминание на точно выбранный момент — когда день выбран в календаре.</summary>
+    public static void Remind(Note note, DateTime when)
+    {
+        note.RemindAt = when;
+        note.Reminded = false;
+        Save();
+    }
+
     /// <summary>Заметки, о которых пора напомнить, — и сразу помечаем, чтобы не повторялись.</summary>
     public static List<Note> TakeDue()
     {

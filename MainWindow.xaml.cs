@@ -43,7 +43,6 @@ public partial class MainWindow : Window
     private bool _volumeDragging;
     private bool _hasMedia;
     private DateTime _lastMediaOk;
-    private TextBlock? _recordLabel;
     private string _lastClip = "";
     private MediaInfo? _current;
 
@@ -51,6 +50,7 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _weatherTimer = new() { Interval = TimeSpan.FromMinutes(10) };
     private readonly DispatcherTimer _phraseTimer = new() { Interval = TimeSpan.FromSeconds(9) };
     private readonly DispatcherTimer _watchTimer = new() { Interval = TimeSpan.FromMilliseconds(700) };
+    private readonly DispatcherTimer _statsTimer = new() { Interval = TimeSpan.FromSeconds(3) };
     private readonly DispatcherTimer _waveTimer = new() { Interval = TimeSpan.FromMilliseconds(40) };
     private WeatherNow? _weather;
     private int _phraseIndex = -1;
@@ -139,6 +139,9 @@ public partial class MainWindow : Window
 
             _watchTimer.Tick += (_, _) => Watch();
             _watchTimer.Start();
+
+            _statsTimer.Tick += (_, _) => UpdatePcStats();
+            _statsTimer.Start();
 
             // яркость меняют с клавиш или из Windows — показываем плашку, как у громкости
             BrightnessService.Watch(percent => Dispatcher.BeginInvoke(() =>
@@ -282,6 +285,7 @@ public partial class MainWindow : Window
         IdleBar.Visibility = Visibility.Collapsed;
         if (_hasMedia) ShowHeader();
         Body.Visibility = Visibility.Visible;
+        UpdatePcStats();
         Animate(Theme.ExpandedWidth, Theme.ExpandedHeight, TimeSpan.FromMilliseconds(260),
             new CubicEase { EasingMode = EasingMode.EaseOut });
     }
@@ -304,6 +308,7 @@ public partial class MainWindow : Window
     {
         if (!_expanded || _animating) return;
         _expanded = false;
+        UpdatePcStats();
 
         var width = _hasMedia ? Theme.CollapsedWidth : Theme.IdleWidth;
         var height = _hasMedia ? Theme.CollapsedHeight : Theme.IdleHeight;
@@ -435,16 +440,50 @@ public partial class MainWindow : Window
 
     private void BuildTiles()
     {
-        TileGrid.Children.Clear();
-        var style = (Style)FindResource("Tile");
+        LargeTiles.Children.Clear();
+        SmallTiles.Children.Clear();
+        QuietTiles.Children.Clear();
+
+        var large = (Style)FindResource("Tile");
+        var small = (Style)FindResource("TileSmall");
+        var quiet = (Style)FindResource("TileQuiet");
+
         foreach (var def in Tiles.All)
         {
             if (!_settings.HomeTiles.Contains(def.Id)) continue;
-            var button = Tiles.Create(def, style, OnTile, out var label);
-            if (def.Id == "record") _recordLabel = label;
-            TileGrid.Children.Add(button);
+
+            if (def.Id == "capture")
+            {
+                var capture = new CaptureTile(large);
+                capture.Picked += record =>
+                {
+                    if (record) ToggleRecording();
+                    else StartScreenshot();
+                };
+                LargeTiles.Children.Add(capture);
+                continue;
+            }
+
+            var button = Tiles.Create(def, def.Kind switch
+            {
+                TileKind.Small => small,
+                TileKind.Quiet => quiet,
+                _ => large,
+            }, OnTile, out _);
+
+            switch (def.Kind)
+            {
+                case TileKind.Small:
+                    SmallTiles.Children.Add(button);
+                    break;
+                case TileKind.Quiet:
+                    QuietTiles.Children.Add(button);
+                    break;
+                default:
+                    LargeTiles.Children.Add(button);
+                    break;
+            }
         }
-        TileGrid.Columns = TileGrid.Children.Count <= 4 ? 2 : 3;
     }
 
     public void ApplySettings()
@@ -457,6 +496,7 @@ public partial class MainWindow : Window
         ApplyLook();
         BuildTiles();
         UpdateClock();
+        UpdatePcStats();
         if (!_settings.ShowOsd) _osd?.HideNow();
     }
 
@@ -522,7 +562,6 @@ public partial class MainWindow : Window
         if (_recorder.IsRecording)
         {
             await _recorder.StopAsync();
-            if (_recordLabel is not null) _recordLabel.Text = "Запись";
             ShowOsd("\uE7C8", "Запись экрана", "сохранена");
             (Application.Current as App)?.Notify("Запись экрана", _recorder.LastFile ?? "");
         }
@@ -532,7 +571,6 @@ public partial class MainWindow : Window
                 ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "Kapsula")
                 : _settings.RecordFolder;
             _recorder.Start(folder, _settings.RecordSystemAudio);
-            if (_recordLabel is not null) _recordLabel.Text = "Стоп";
             ShowOsd("\uE7C8", "Запись экрана", "идёт");
             (Application.Current as App)?.Notify("Запись экрана", "Пишу экран. Alt+R — остановить");
         }
@@ -544,6 +582,14 @@ public partial class MainWindow : Window
     {
         if (sender is not FrameworkElement { Tag: string tag }) return;
         OpenTile(tag);
+    }
+
+    /// <summary>Настройки живут внутри капсулы — отдельного окна больше нет.</summary>
+    public void ShowSettings()
+    {
+        if (!IsVisible) Show();
+        if (!_expanded) Expand();
+        OpenPanel(new AppearancePanel());
     }
 
     /// <summary>Открыть раздел по имени плитки — используется и лаунчером.</summary>
@@ -567,6 +613,8 @@ public partial class MainWindow : Window
                 OpenPanel(new WeatherPanel());
                 break;
             case "shot":
+            case "record":
+            case "capture":
                 StartScreenshot();
                 break;
             case "quick":
@@ -574,9 +622,6 @@ public partial class MainWindow : Window
                 break;
             case "timer":
                 OpenPanel(new TimerPanel());
-                break;
-            case "record":
-                ToggleRecording();
                 break;
             case "summary":
                 ShowSummary();
@@ -965,6 +1010,13 @@ public partial class MainWindow : Window
 
         if (info is not null) _lastMediaOk = DateTime.UtcNow;
         else if (_hasMedia && (DateTime.UtcNow - _lastMediaOk).TotalSeconds < 2) return; // сбой чтения — не мигаем
+
+        if (info is { Aumid.Length: > 0 } && info.App != "Kapsula" && info.Aumid != _settings.LastMusicApp)
+        {
+            _settings.LastMusicApp = info.Aumid;
+            _settings.Save();
+        }
+
         _current = info;
 
         var hasMedia = info is not null && info.HasSession && info.IsPlaying;
@@ -1034,23 +1086,9 @@ public partial class MainWindow : Window
 
     private void UpdateLyricLine(MediaInfo info)
     {
-        // у своей музыки артиста в хабе нет — берём его из имени файла «Исполнитель - Название»
+        // только то, что отдаёт медиасессия Windows: имя файла разбирать не нужно
         var artist = info.Artist;
         var title = info.Title;
-        if (info.App == "Kapsula")
-        {
-            var dash = title.IndexOf(" - ", StringComparison.Ordinal);
-            if (dash > 0)
-            {
-                artist = title[..dash].Trim();
-                title = title[(dash + 3)..].Trim();
-            }
-            else
-            {
-                artist = "";
-            }
-        }
-
         var key = artist + "|" + title;
         if (key != _lyricKey)
         {
@@ -1095,9 +1133,36 @@ public partial class MainWindow : Window
             return;
         }
 
+        // ничего не играет и сессии нет — сначала открываем плеер, тихо, в фоне
+        if (_current is null || !_current.HasSession)
+        {
+            var ready = await PreparePlayerAsync();
+            if (!ready) return;
+        }
+
         await _media.PlayPauseAsync();
-        await Task.Delay(120);
+        await Task.Delay(150);
         await UpdateMediaAsync();
+    }
+
+    /// <summary>
+    /// Плеер открыт в системе — просто ждём его медиасессию. Не открыт — запускаем в фоне
+    /// и сворачиваем окно, чтобы оно не всплывало поверх работы.
+    /// </summary>
+    private async Task<bool> PreparePlayerAsync()
+    {
+        if (MusicLauncher.IsRunning()) return await _media.WaitForSessionAsync(TimeSpan.FromSeconds(4));
+
+        if (!MusicLauncher.Launch(_settings.LastMusicApp))
+        {
+            ShowOsd("\uE768", "Музыка", "не нашёл плеер");
+            return false;
+        }
+
+        ShowOsd("\uE768", "Музыка", "открываю плеер в фоне");
+        _ = MusicLauncher.HideWindowsAsync();
+        await _media.WaitForSessionAsync(TimeSpan.FromSeconds(5));
+        return true;
     }
 
     private async void OnNext(object sender, RoutedEventArgs e)
@@ -1185,6 +1250,7 @@ public partial class MainWindow : Window
         }
 
         _dragging = true;
+        _dragMoved = false;
         _dragFrom = PointToScreen(e.GetPosition(this));
         Capsule.CaptureMouse();
         e.Handled = true;
@@ -1194,8 +1260,11 @@ public partial class MainWindow : Window
     {
         if (!_dragging) return;
         var now = PointToScreen(e.GetPosition(this));
-        Left += now.X - _dragFrom.X;
-        Top += now.Y - _dragFrom.Y;
+        var dx = now.X - _dragFrom.X;
+        var dy = now.Y - _dragFrom.Y;
+        if (Math.Abs(dx) + Math.Abs(dy) > 3) _dragMoved = true;
+        Left += dx;
+        Top += dy;
         _dragFrom = now;
     }
 
@@ -1205,6 +1274,13 @@ public partial class MainWindow : Window
         _dragging = false;
         Capsule.ReleaseMouseCapture();
 
+        // щелчок без смещения — раскрыть: так капсула открывается, когда наведение выключено
+        if (!_dragMoved)
+        {
+            if (!_expanded) Expand();
+            return;
+        }
+
         _settings.Detached = true;
         SnapToEdges();
         _settings.WindowLeft = Left;
@@ -1213,6 +1289,7 @@ public partial class MainWindow : Window
     }
 
     private bool _dragging;
+    private bool _dragMoved;
     private Point _dragFrom;
 
     private void OnCapsuleDoubleClick(object sender, MouseButtonEventArgs e)
@@ -1288,6 +1365,27 @@ public partial class MainWindow : Window
     }
 
     // ── что происходит вокруг ────────────────────────────────────────────────
+
+    /// <summary>Одна строка сверху раскрытой капсулы: процессор, память, диск, батарея.</summary>
+    private void UpdatePcStats()
+    {
+        var show = _settings.ShowPcStats && _expanded;
+        PcStats.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        if (!show) return;
+
+        var parts = new List<string> { $"Процессор {Services.SysInfo.CpuPercent()}%" };
+
+        var (used, total) = Services.SysInfo.Memory();
+        if (total > 0) parts.Add($"Память {used:0.#} из {total:0.#} ГБ");
+
+        var (free, _) = Services.SysInfo.Disk();
+        if (free > 0) parts.Add($"Диск {free:0} ГБ свободно");
+
+        var (percent, charging, hasBattery) = Services.SysInfo.Battery();
+        if (hasBattery) parts.Add(charging ? $"Батарея {percent}%, на зарядке" : $"Батарея {percent}%");
+
+        PcStats.Text = string.Join("   ·   ", parts);
+    }
 
     private void Watch()
     {

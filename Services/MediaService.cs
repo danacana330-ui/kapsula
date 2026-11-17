@@ -11,6 +11,8 @@ public sealed class MediaInfo
     public byte[]? Art { get; init; }
     public TimeSpan Position { get; init; }
     public TimeSpan Duration { get; init; }
+    /// <summary>Идентификатор приложения в медиахабе — по нему потом можно запустить плеер.</summary>
+    public string Aumid { get; init; } = "";
     public bool HasSession => Title.Length > 0;
 }
 
@@ -99,6 +101,7 @@ public sealed class MediaService
                 App = FriendlyApp(app),
                 IsPlaying = info?.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing,
                 Art = art,
+                Aumid = app,
                 Position = timeline?.Position ?? TimeSpan.Zero,
                 Duration = timeline is null ? TimeSpan.Zero : timeline.EndTime - timeline.StartTime,
             };
@@ -149,6 +152,32 @@ public sealed class MediaService
     public async Task PlayPauseAsync()
     {
         try { await Session?.TryTogglePlayPauseAsync(); } catch { }
+    }
+
+    /// <summary>Плеер запустили — ждём, пока он зарегистрирует медиасессию.</summary>
+    public async Task<bool> WaitForSessionAsync(TimeSpan timeout)
+    {
+        var until = DateTime.UtcNow + timeout;
+        while (DateTime.UtcNow < until)
+        {
+            try
+            {
+                _active = null;
+                var session = Session;
+                if (session is not null)
+                {
+                    var props = await session.TryGetMediaPropertiesAsync();
+                    if (!string.IsNullOrWhiteSpace(props?.Title)) return true;
+                }
+            }
+            catch
+            {
+            }
+
+            await Task.Delay(400);
+        }
+
+        return false;
     }
 
     public async Task NextAsync()

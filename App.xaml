@@ -18,7 +18,7 @@
 
         <Style x:Key="IconButton" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{x:Static local:Theme.DimBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Dim}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Width" Value="30"/>
             <Setter Property="Height" Value="30"/>
@@ -30,10 +30,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{x:Static local:Theme.HoverBrush}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Hover}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{x:Static local:Theme.HoverBrush}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Hover}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -42,23 +42,69 @@
         </Style>
 
         <Style x:Key="Tile" TargetType="Button">
-            <Setter Property="Background" Value="{x:Static local:Theme.CardBrush}"/>
-            <Setter Property="Foreground" Value="{x:Static local:Theme.TextBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource Card}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Text}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="14"
-                                BorderBrush="{x:Static local:Theme.StrokeBrush}" BorderThickness="1"
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="16"
+                                BorderBrush="{DynamicResource Stroke}" BorderThickness="1"
                                 Padding="10,8">
                             <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{x:Static local:Theme.CardHoverBrush}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardHover}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{x:Static local:Theme.HoverBrush}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Hover}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TileSmall" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="12">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Hover}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TileQuiet" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="9,5"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="10"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Hover}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Text}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -68,7 +114,7 @@
 
         <Style x:Key="GhostButton" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{x:Static local:Theme.DimBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Dim}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Padding" Value="10,5"/>
             <Setter Property="Template">
@@ -80,8 +126,8 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{x:Static local:Theme.HoverBrush}"/>
-                                <Setter Property="Foreground" Value="{x:Static local:Theme.TextBrush}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Hover}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Text}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -91,7 +137,7 @@
 
         <Style x:Key="InputBox" TargetType="TextBox">
             <Setter Property="Background" Value="#12FFFFFF"/>
-            <Setter Property="Foreground" Value="{x:Static local:Theme.TextBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Text}"/>
             <Setter Property="CaretBrush" Value="{x:Static local:Theme.AccentBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="12,9"/>
@@ -107,7 +153,7 @@
                                            Margin="{TemplateBinding Padding}"
                                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                            FontSize="{TemplateBinding FontSize}"
-                                           Foreground="{x:Static local:Theme.DimBrush}"
+                                           Foreground="{DynamicResource Dim}"
                                            IsHitTestVisible="False" TextTrimming="CharacterEllipsis"
                                            Visibility="Collapsed"/>
                             </Grid>
@@ -136,10 +182,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{x:Static local:Theme.HoverBrush}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Hover}"/>
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{x:Static local:Theme.HoverBrush}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Hover}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>

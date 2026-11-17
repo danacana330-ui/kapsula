@@ -55,6 +55,11 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+        {
+            if (args.ExceptionObject is Exception exception) LogError(exception);
+        };
+
         _mutex = new Mutex(true, "Kapsula.SingleInstance", out var isFirst);
         if (!isFirst)
         {
@@ -66,10 +71,19 @@ public partial class App : Application
 
         Settings = AppSettings.Load();
         Autostart.Apply(Settings.StartWithWindows);
+        Theme.RegisterResources(Resources);
 
-        _window = new MainWindow();
-        _window.SourceInitialized += (_, _) => WindowHelper.MakeOverlay(_window);
-        _window.Show();
+        try
+        {
+            _window = new MainWindow();
+            _window.SourceInitialized += (_, _) => WindowHelper.MakeOverlay(_window);
+            _window.Show();
+        }
+        catch (Exception exception)
+        {
+            LogError(exception);
+            throw;
+        }
 
         if (!Settings.Onboarded)
         {
@@ -85,10 +99,6 @@ public partial class App : Application
             // оверлей не должен падать от единичного сбоя системного API
             LogError(args.Exception);
             args.Handled = true;
-        };
-        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
-        {
-            if (args.ExceptionObject is Exception exception) LogError(exception);
         };
     }
 
@@ -118,11 +128,7 @@ public partial class App : Application
 
     public void OpenSettings()
     {
-        if (_window is null) return;
-        var window = new SettingsWindow(Settings);
-        window.Saved += () => _window.ApplySettings();
-        window.Show();
-        window.Activate();
+        _window?.ShowSettings();
     }
 
     /// <summary>Сложить настройки, заметки, буфер и историю чата в один архив.</summary>

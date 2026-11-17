@@ -15,27 +15,44 @@ public partial class SummaryStripWindow : Window
         Opacity = 0;
     }
 
-    /// <summary>Показать плашку рядом с капсулой: справа, а если не помещается — слева.</summary>
+    /// <summary>Показать плашку справа от капсулы; если справа нет места — под капсулой.</summary>
     public void ShowNear(double capsuleLeft, double capsuleTop, double capsuleWidth, double capsuleHeight,
         string text = "ваша сводка готова", string glyph = "\uE946")
     {
         Label.Text = text;
         GlyphText.Text = glyph;
-        Left = capsuleLeft;
-        Top = capsuleTop;
-        // размеры станут известны после первого показа — считаем по содержимому
         SizeToContent = SizeToContent.WidthAndHeight;
         Show();
         UpdateLayout();
 
-        var work = SystemParameters.WorkArea;
-        var rightSide = capsuleLeft + capsuleWidth + 6;
-        var fitsRight = rightSide + ActualWidth <= work.Right;
-        Left = fitsRight ? rightSide : capsuleLeft - ActualWidth - 6;
-        Top = Math.Max(work.Top + 2,
-            Math.Min(capsuleTop + (capsuleHeight - ActualHeight) / 2, work.Bottom - ActualHeight - 2));
+        // у рамки Margin="10", поэтому окно шире самой плашки на 10 с каждой стороны
+        const double pad = 10;
+        const double gap = 6;
+        const double barHeight = 46; // высота строки капсулы, к ней и прижимаемся
 
-        var slide = fitsRight ? 12 : -12;
+        var boxW = Box.ActualWidth;
+        var boxH = Box.ActualHeight;
+        var work = SystemParameters.WorkArea;
+
+        var rightLeft = capsuleLeft + capsuleWidth + gap - pad;
+        var fitsRight = rightLeft + pad + boxW <= work.Right - 2;
+
+        double left, top;
+        if (fitsRight)
+        {
+            left = rightLeft;
+            top = capsuleTop + (barHeight - boxH) / 2 - pad;
+        }
+        else
+        {
+            left = capsuleLeft + (capsuleWidth - boxW) / 2 - pad;
+            top = capsuleTop + capsuleHeight + gap - pad;
+        }
+
+        Left = Math.Clamp(left, work.Left + 2 - pad, Math.Max(work.Left + 2 - pad, work.Right - boxW - pad - 2));
+        Top = Math.Clamp(top, work.Top + 2 - pad, Math.Max(work.Top + 2 - pad, work.Bottom - boxH - pad - 2));
+
+        var slide = fitsRight ? 12 : 0;
         BeginAnimation(OpacityProperty, new DoubleAnimation(1, TimeSpan.FromMilliseconds(220))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },

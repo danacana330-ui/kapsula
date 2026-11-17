@@ -10,6 +10,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -57,24 +58,19 @@
                     Click="OnAdd" Margin="8,0,0,0"/>
         </Grid>
 
-        <Grid Grid.Row="3" Margin="0,0,0,10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="Напомнить в" FontSize="11.5" VerticalAlignment="Center"
-                       Foreground="{x:Static local:Theme.DimBrush}"/>
-            <TextBox x:Name="RemindBox" Grid.Column="1" Style="{StaticResource InputBox}" Width="70"
-                     Margin="8,0,0,0" TextAlignment="Center" ToolTip="Время вида 18:30; выбери заметку в списке"/>
-            <Button Grid.Column="2" Style="{StaticResource GhostButton}" Content="Поставить"
-                    Margin="8,0,0,0" Click="OnSetRemind"/>
-            <Button Grid.Column="3" Style="{StaticResource GhostButton}" Content="Снять"
-                    HorizontalAlignment="Left" Margin="8,0,0,0" Click="OnClearRemind"/>
-            <Button Grid.Column="3" Style="{StaticResource GhostButton}" Content="Календарь"
-                    HorizontalAlignment="Right" Click="OnToggleCalendar"/>
-        </Grid>
+        <!-- напоминание: одна плашка, дальше календарь и время -->
+        <Border x:Name="RemindBar" Grid.Row="3" Margin="0,0,0,10" CornerRadius="12" Padding="10,8"
+                Cursor="Hand" MouseLeftButtonUp="OnAddRemind"
+                Background="{x:Static local:Theme.CardBrush}"
+                BorderBrush="{x:Static local:Theme.StrokeBrush}" BorderThickness="1">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="&#xE7ED;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                           Foreground="{x:Static local:Theme.AccentBrush}" VerticalAlignment="Center"/>
+                <TextBlock x:Name="RemindHint" Text="Добавить напоминание" FontSize="11.5"
+                           Margin="8,0,0,0" VerticalAlignment="Center"
+                           Foreground="{x:Static local:Theme.DimBrush}"/>
+            </StackPanel>
+        </Border>
 
         <Border x:Name="CalendarHost" Grid.Row="4" Visibility="Collapsed" Margin="0,0,0,10"
                 CornerRadius="14" Padding="12,10"
@@ -107,7 +103,27 @@
             </Grid>
         </Border>
 
-        <ListBox Grid.Row="5" x:Name="List" Style="{StaticResource PlainList}">
+        <Grid x:Name="TimeRow" Grid.Row="5" Visibility="Collapsed" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="TimeHint" Text="Во сколько?" FontSize="11.5" VerticalAlignment="Center"
+                       Foreground="{x:Static local:Theme.DimBrush}"/>
+            <TextBox x:Name="RemindBox" Grid.Column="1" Style="{StaticResource InputBox}" Width="70"
+                     Margin="8,0,0,0" TextAlignment="Center" KeyDown="OnRemindKey" ToolTip="Время вида 18:30"/>
+            <Button Grid.Column="2" Style="{StaticResource GhostButton}" Content="Напомнить"
+                    Margin="8,0,0,0" Click="OnSetRemind"/>
+            <Button Grid.Column="3" Style="{StaticResource GhostButton}" Content="Снять"
+                    Margin="8,0,0,0" Click="OnClearRemind"/>
+            <Button Grid.Column="4" Style="{StaticResource GhostButton}" Content="Отмена"
+                    HorizontalAlignment="Right" Click="OnCancelRemind"/>
+        </Grid>
+
+        <ListBox Grid.Row="6" x:Name="List" Style="{StaticResource PlainList}">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <Grid>
