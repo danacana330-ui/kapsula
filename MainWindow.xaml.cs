@@ -146,6 +146,10 @@ public partial class MainWindow : Window
 
             if (_settings.ScreenBrightness < 100) ScreenBrightness.Set(_settings.ScreenBrightness);
 
+            // подключились наушники или колонка — короткая плашка
+            BluetoothWatch.Start(name => Dispatcher.BeginInvoke(() =>
+                ShowOsd("\uE702", "Bluetooth", name + " подключён")));
+
             _waveTimer.Tick += (_, _) => UpdateLiquidEdge();
             _waveTimer.Start();
 
@@ -260,6 +264,7 @@ public partial class MainWindow : Window
     private void OnCapsuleEnter(object sender, MouseEventArgs e)
     {
         _collapseTimer.Stop();
+        if (_strip) return; // в игре на весь экран наведение не разворачивает капсулу
         if (_settings.ExpandOnHover) Expand();
     }
 
@@ -321,7 +326,7 @@ public partial class MainWindow : Window
     /// <summary>Полоска без музыки: сворачиваем капсулу в тонкую полосу у верхней кромки.</summary>
     private void ApplyIdleShape()
     {
-        if (_expanded) return;
+        if (_expanded || _strip) return;
         if (_hasMedia)
         {
             ShowHeader();
@@ -926,6 +931,7 @@ public partial class MainWindow : Window
         ClockText.Text = time;
         IdleTime.Text = time;
         MascotTime.Text = time;
+        StripTime.Text = time;
         MascotDate.Text = now.ToString("ddd, d MMMM", new System.Globalization.CultureInfo("ru-RU"));
     }
 
@@ -969,7 +975,7 @@ public partial class MainWindow : Window
         }
 
         // страховка: если музыка играет, шапка обязана быть на экране
-        if (_hasMedia && !_expanded && HeaderRow.Visibility != Visibility.Visible)
+        if (_hasMedia && !_expanded && !_strip && HeaderRow.Visibility != Visibility.Visible)
         {
             HeaderRow.BeginAnimation(OpacityProperty, null);
             HeaderRow.Opacity = 1;
@@ -1332,14 +1338,76 @@ public partial class MainWindow : Window
     {
         if (!_settings.HideInFullscreen || _expanded || _userPinned)
         {
+            if (_strip) LeaveStrip();
             ShowFromAutoHide();
             return;
         }
 
         var own = new WindowInteropHelper(this).Handle;
-        if (DesktopWatch.ForegroundIsFullscreen(own)) AutoHide();
-        else ShowFromAutoHide();
+        if (DesktopWatch.ForegroundIsFullscreen(own)) EnterStrip();
+        else
+        {
+            if (_strip) LeaveStrip();
+            ShowFromAutoHide();
+        }
     }
+
+    private bool _strip;
+
+    /// <summary>В игре на весь экран остаётся только узкая полоска с часами и звуком.</summary>
+    private void EnterStrip()
+    {
+        if (_strip) return;
+        _strip = true;
+
+        HeaderRow.Visibility = Visibility.Collapsed;
+        IdleBar.Visibility = Visibility.Collapsed;
+        GameStrip.Visibility = Visibility.Visible;
+        Capsule.BeginAnimation(WidthProperty, null);
+        Capsule.BeginAnimation(HeightProperty, null);
+        Capsule.Width = 118;
+        Capsule.Height = 26;
+        Capsule.CornerRadius = new CornerRadius(13);
+        Capsule.Opacity = 0.7;
+        StripTime.Text = DateTime.Now.ToString(_settings.ShowSeconds ? "HH:mm:ss" : "HH:mm");
+        StripMuteIcon.Text = VolumeService.IsMuted() ? "\uE74F" : "\uE767";
+    }
+
+    private void LeaveStrip()
+    {
+        if (!_strip) return;
+        _strip = false;
+
+        GameStrip.Visibility = Visibility.Collapsed;
+        Capsule.Opacity = 1;
+        Capsule.BeginAnimation(WidthProperty, null);
+        Capsule.BeginAnimation(HeightProperty, null);
+
+        if (_hasMedia)
+        {
+            Capsule.Width = Theme.CollapsedWidth;
+            Capsule.Height = Theme.CollapsedHeight;
+            Capsule.CornerRadius = new CornerRadius(Theme.CollapsedHeight / 2);
+            HeaderRow.Visibility = Visibility.Visible;
+            HeaderRow.Opacity = 1;
+        }
+        else
+        {
+            Capsule.Width = Theme.IdleWidth;
+            Capsule.Height = Theme.IdleHeight;
+            Capsule.CornerRadius = new CornerRadius(Theme.IdleHeight / 2);
+            IdleBar.Visibility = Visibility.Visible;
+            UpdateIdleBar();
+        }
+    }
+
+    private void OnStripMute(object sender, RoutedEventArgs e)
+    {
+        VolumeService.ToggleMute();
+        StripMuteIcon.Text = VolumeService.IsMuted() ? "\uE74F" : "\uE767";
+    }
+
+    private void OnStripExpand(object sender, RoutedEventArgs e) => Expand();
 
     private void AutoHide()
     {
