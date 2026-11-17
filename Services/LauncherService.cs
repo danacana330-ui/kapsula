@@ -37,14 +37,11 @@ public sealed class LauncherService
         ("Таймер", "timer", "таймер timer"),
         ("Погода", "weather", "погода weather"),
         ("ИИ-помощник", "ai", "ии помощник чат нейросеть ai"),
-        ("Скриншот", "shot", "скриншот снимок screenshot"),
+        ("Захват экрана", "capture", "скриншот снимок запись экрана screenshot"),
         ("Быстрые действия", "quick", "быстрые действия переключатели quick"),
         ("Полка файлов", "shelf", "полка файлы shelf"),
         ("Сводка дня", "summary", "сводка дня summary"),
-        ("Вид и поведение", "appearance", "вид внешний оформление тема appearance"),
-        ("Компьютер", "system", "система процессор память батарея компьютер system"),
-        ("Музыка", "music", "музыка плеер треки музыка music"),
-        ("Настройки Kapsula", "settings", "настройки settings параметры"),
+        ("Настройки", "appearance", "настройки вид внешний оформление тема appearance"),
     };
 
     private static Dictionary<string, int> _usage = new(StringComparer.OrdinalIgnoreCase);
@@ -288,7 +285,7 @@ public sealed class LauncherService
 
             if (item.Kind == "settings")
             {
-                new SettingsWindow(App.Settings).Show();
+                MainWindow.Instance?.ShowSettings();
                 return;
             }
 

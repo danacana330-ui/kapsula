@@ -95,7 +95,7 @@ public partial class MainWindow : Window
         _collapseTimer.Tick += (_, _) =>
         {
             _collapseTimer.Stop();
-            if (!_userPinned) Collapse();
+            if (!_userPinned && !_settings.KeepOpen) Collapse();
         };
 
         TimerService.Finished += () =>
@@ -273,7 +273,7 @@ public partial class MainWindow : Window
 
     private void OnCapsuleLeave(object sender, MouseEventArgs e)
     {
-        if (_userPinned) return;
+        if (_userPinned || _settings.KeepOpen) return;
         _collapseTimer.Stop();
         _collapseTimer.Start();
     }
@@ -489,12 +489,14 @@ public partial class MainWindow : Window
     public void ApplySettings()
     {
         _settings = App.Settings;
+        _userPinned = _settings.KeepOpen;
         Theme.SetLight(_settings.LightTheme);
         Theme.SetRim(_settings.LightRim);
         ApplyScale();
         ApplyPosition();
         ApplyLook();
         BuildTiles();
+        UpdatePinVisuals();
         UpdateClock();
         UpdatePcStats();
         if (!_settings.ShowOsd) _osd?.HideNow();
@@ -629,12 +631,6 @@ public partial class MainWindow : Window
             case "appearance":
                 OpenPanel(new AppearancePanel());
                 break;
-            case "system":
-                OpenPanel(new SystemPanel());
-                break;
-            case "music":
-                OpenPanel(new MusicPanel());
-                break;
         }
     }
 
@@ -651,8 +647,6 @@ public partial class MainWindow : Window
             case QuickPanel p: p.Back += ClosePanel; break;
             case TimerPanel p: p.Back += ClosePanel; break;
             case AppearancePanel p: p.Back += ClosePanel; break;
-            case SystemPanel p: p.Back += ClosePanel; break;
-            case MusicPanel p: p.Back += ClosePanel; break;
         }
 
         PanelHost.Content = panel;
@@ -1228,9 +1222,25 @@ public partial class MainWindow : Window
 
     private void OnPinClick(object sender, RoutedEventArgs e)
     {
-        _userPinned = !_userPinned;
-        PinButton.Opacity = _userPinned ? 1 : 0.45;
-        if (_userPinned) Expand();
+        SetPinned(!_settings.KeepOpen);
+        if (_settings.KeepOpen) Expand();
+    }
+
+    /// <summary>Фиксация хранится в настройках: капсула остаётся открытой, пока её не свернут.</summary>
+    private void SetPinned(bool pinned)
+    {
+        _userPinned = pinned;
+        _settings.KeepOpen = pinned;
+        _settings.Save();
+        UpdatePinVisuals();
+    }
+
+    private void UpdatePinVisuals()
+    {
+        var pinned = _settings.KeepOpen;
+        PinButton.Opacity = pinned ? 1 : 0.45;
+        PinTile.Opacity = pinned ? 1 : 0.45;
+        PinTile.ToolTip = pinned ? "Отпустить" : "Держать открытой";
     }
 
     private void OnSettingsClick(object sender, RoutedEventArgs e) =>
@@ -1242,6 +1252,11 @@ public partial class MainWindow : Window
     {
         if (e.ChangedButton != MouseButton.Left) return;
         if (IsInteractive(e.OriginalSource as DependencyObject)) return;
+
+        // нажатие внутри открытой панели не перетаскивает капсулу: иначе панель теряет клики
+        if (e.OriginalSource is DependencyObject source && PanelHost.Visibility == Visibility.Visible
+            && PanelHost.IsAncestorOf(source))
+            return;
 
         if (e.ClickCount == 2)
         {

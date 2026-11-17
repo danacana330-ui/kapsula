@@ -46,7 +46,9 @@ public sealed class AppSettings
     public int ScreenBrightness { get; set; } = 100;
     public bool ShowOsd { get; set; } = true;
     /// <summary>Показывать строку текста песни под треком в шапке капсулы.</summary>
-    public bool ShowLyrics { get; set; } = true;
+    public bool ShowLyrics { get; set; }
+    /// <summary>Не сворачивать капсулу, когда курсор ушёл: держим открытой, пока не свернут вручную.</summary>
+    public bool KeepOpen { get; set; }
     /// <summary>Строка характеристик компьютера сверху в раскрытой капсуле.</summary>
     public bool ShowPcStats { get; set; }
     /// <summary>Последний плеер, отдававший трек в медиахаб, — его и запускаем, когда музыки нет.</summary>

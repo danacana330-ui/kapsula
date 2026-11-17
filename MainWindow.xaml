@@ -317,8 +317,17 @@
                                          Margin="0,12,0,0" VerticalAlignment="Stretch"/>
                             <StackPanel x:Name="SmallTiles" Grid.Row="3" Orientation="Horizontal"
                                         HorizontalAlignment="Center" Margin="0,8,0,0"/>
-                            <StackPanel x:Name="QuietTiles" Grid.Row="4" Orientation="Horizontal"
-                                        HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                            <StackPanel Grid.Row="4" Orientation="Horizontal"
+                                        HorizontalAlignment="Center" Margin="0,6,0,0">
+                                <StackPanel x:Name="QuietTiles" Orientation="Horizontal"/>
+
+                                <!-- фиксация: капсула не сворачивается, пока её не свернут вручную -->
+                                <Button x:Name="PinTile" Style="{StaticResource IconButton}"
+                                        VerticalAlignment="Center" Margin="6,0,0,0"
+                                        Opacity="0.45" Click="OnPinClick" ToolTip="Держать открытой">
+                                    <TextBlock Text="&#xE718;" FontFamily="Segoe MDL2 Assets" FontSize="12"/>
+                                </Button>
+                            </StackPanel>
                         </Grid>
                     </Grid>
 

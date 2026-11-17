@@ -56,6 +56,8 @@
                                       Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,10"/>
                             <CheckBox x:Name="HoverBox" Content="Раскрывать при наведении"
                                       Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,10"/>
+                            <CheckBox x:Name="KeepBox" Content="Не сворачивать, когда уводишь курсор"
+                                      Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,10"/>
                             <CheckBox x:Name="SecondsBox" Content="Показывать секунды на часах"
                                       Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,10"/>
                             <CheckBox x:Name="OsdBox" Content="Показывать громкость и CapsLock"
@@ -113,13 +115,25 @@
                         <!-- ── Сводка ── -->
                         <StackPanel x:Name="SecSummary" Visibility="Collapsed">
                             <CheckBox x:Name="SummaryBox" Content="Показывать утреннюю сводку"
-                                      Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,10"/>
-                            <CheckBox x:Name="LyricsBox" Content="Строка текста песни в шапке"
                                       Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,12"/>
                             <TextBlock Text="Во сколько показывать" FontSize="11" Margin="0,0,0,6"
                                        Foreground="{x:Static local:Theme.DimBrush}"/>
-                            <TextBox x:Name="SummaryTimeBox" Style="{StaticResource InputBox}" Width="90"
-                                     HorizontalAlignment="Left" TextAlignment="Center" ToolTip="Время вида 09:00"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                <Button Style="{StaticResource IconButton}" Click="OnSummaryEarlier"
+                                        ToolTip="На полчаса раньше">
+                                    <TextBlock Text="&#xE76B;" FontFamily="Segoe MDL2 Assets" FontSize="11"/>
+                                </Button>
+                                <TextBlock x:Name="SummaryTimeText" Text="09:00" FontSize="14"
+                                           FontWeight="SemiBold" MinWidth="64" TextAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           Foreground="{x:Static local:Theme.TextBrush}"/>
+                                <Button Style="{StaticResource IconButton}" Click="OnSummaryLater"
+                                        ToolTip="На полчаса позже">
+                                    <TextBlock Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="11"/>
+                                </Button>
+                            </StackPanel>
+                            <TextBlock Text="Шаг — полчаса" FontSize="10.5"
+                                       Foreground="{x:Static local:Theme.DimBrush}"/>
                         </StackPanel>
 
                         <!-- ── ИИ ── -->

@@ -135,8 +135,8 @@ public partial class AppearancePanel : UserControl
     {
         foreach (var box in new[]
                  {
-                     AutostartBox, HoverBox, SecondsBox, OsdBox, FullscreenBox, CursorBox, MotionBox,
-                     LightBox, RimBox, ShadowBox, PrivacyBox, SummaryBox, LyricsBox,
+                     AutostartBox, HoverBox, KeepBox, SecondsBox, OsdBox, FullscreenBox, CursorBox, MotionBox,
+                     LightBox, RimBox, ShadowBox, PrivacyBox, SummaryBox,
                      SkipPwdBox, ToastBox, RecAudioBox,
                  })
         {
@@ -154,7 +154,6 @@ public partial class AppearancePanel : UserControl
         FontBox.SelectionChanged += (_, _) => Save();
 
         CleanupBox.TextChanged += (_, _) => Save();
-        SummaryTimeBox.TextChanged += (_, _) => Save();
         CityBox.LostFocus += (_, _) => Save();
         AiBox.LostFocus += (_, _) => Save();
         AiKeyBox.LostFocus += (_, _) => Save();
@@ -168,6 +167,7 @@ public partial class AppearancePanel : UserControl
 
         AutostartBox.IsChecked = _s.StartWithWindows;
         HoverBox.IsChecked = _s.ExpandOnHover;
+        KeepBox.IsChecked = _s.KeepOpen;
         SecondsBox.IsChecked = _s.ShowSeconds;
         OsdBox.IsChecked = _s.ShowOsd;
         FullscreenBox.IsChecked = _s.HideInFullscreen;
@@ -180,7 +180,6 @@ public partial class AppearancePanel : UserControl
         PrivacyBox.IsChecked = _s.ShowPrivacyDots;
 
         SummaryBox.IsChecked = _s.SummaryEnabled;
-        LyricsBox.IsChecked = _s.ShowLyrics;
 
         SkipPwdBox.IsChecked = _s.SkipPasswords;
         ToastBox.IsChecked = _s.CopyToast;
@@ -192,7 +191,7 @@ public partial class AppearancePanel : UserControl
         FontBox.SelectedItem = Fonts.Contains(_s.UiFont) ? _s.UiFont : Fonts[0];
 
         CleanupBox.Text = _s.ClipboardCleanupHours.ToString();
-        SummaryTimeBox.Text = _s.SummaryTime;
+        SummaryTimeText.Text = _s.SummaryTime;
         CityBox.Text = _s.WeatherCity;
         AiBox.Text = _s.AiEndpoint;
         AiKeyBox.Text = _s.AiServerKey;
@@ -224,6 +223,7 @@ public partial class AppearancePanel : UserControl
 
         _s.StartWithWindows = AutostartBox.IsChecked == true;
         _s.ExpandOnHover = HoverBox.IsChecked == true;
+        _s.KeepOpen = KeepBox.IsChecked == true;
         _s.ShowSeconds = SecondsBox.IsChecked == true;
         _s.ShowOsd = OsdBox.IsChecked == true;
         _s.HideInFullscreen = FullscreenBox.IsChecked == true;
@@ -236,7 +236,6 @@ public partial class AppearancePanel : UserControl
         _s.ShowPrivacyDots = PrivacyBox.IsChecked == true;
 
         _s.SummaryEnabled = SummaryBox.IsChecked == true;
-        _s.ShowLyrics = LyricsBox.IsChecked == true;
 
         _s.SkipPasswords = SkipPwdBox.IsChecked == true;
         _s.CopyToast = ToastBox.IsChecked == true;
@@ -248,8 +247,8 @@ public partial class AppearancePanel : UserControl
         if (int.TryParse(CleanupBox.Text.Trim(), out var hours))
             _s.ClipboardCleanupHours = Math.Clamp(hours, 0, 8760);
 
-        var time = SummaryTimeBox.Text.Trim().Replace('.', ':');
-        if (System.Text.RegularExpressions.Regex.IsMatch(time, @"^\d{1,2}:\d{2}$")) _s.SummaryTime = time;
+        if (System.Text.RegularExpressions.Regex.IsMatch(SummaryTimeText.Text, @"^\d{1,2}:\d{2}$"))
+            _s.SummaryTime = SummaryTimeText.Text;
 
         if (CityBox.Text.Trim().Length > 0) _s.WeatherCity = CityBox.Text.Trim();
         _s.AiEndpoint = AiBox.Text.Trim();
@@ -264,6 +263,23 @@ public partial class AppearancePanel : UserControl
     }
 
     // ── кнопки ───────────────────────────────────────────────────────────────
+
+    private void OnSummaryEarlier(object sender, RoutedEventArgs e) => ShiftSummaryTime(-30);
+
+    private void OnSummaryLater(object sender, RoutedEventArgs e) => ShiftSummaryTime(30);
+
+    /// <summary>Время сводки двигаем стрелками по полчаса — писать руками ничего не нужно.</summary>
+    private void ShiftSummaryTime(int minutes)
+    {
+        var text = SummaryTimeText.Text.Trim().Replace('.', ':');
+        if (!TimeSpan.TryParse(text, out var at)) at = new TimeSpan(9, 0, 0);
+        var total = ((int)at.TotalMinutes + minutes) % 1440;
+        if (total < 0) total += 1440;
+        at = TimeSpan.FromMinutes(total);
+        SummaryTimeText.Text = $"{at.Hours:00}:{at.Minutes:00}";
+        _s.SummaryTime = SummaryTimeText.Text;
+        _s.Save();
+    }
 
     private void OnReset(object sender, RoutedEventArgs e)
     {

@@ -16,6 +16,7 @@ public partial class NotesPanel : UserControl
     private DateTime _month = new(DateTime.Today.Year, DateTime.Today.Month, 1);
     private Note? _remindTarget;
     private DateTime _remindDay = DateTime.Today;
+    private TimeSpan _remindTime = new(18, 0, 0);
 
     public NotesPanel()
     {
@@ -146,40 +147,61 @@ public partial class NotesPanel : UserControl
 
     // ── напоминание ──────────────────────────────────────────────────────────
 
-    private void OnAddRemind(object sender, MouseButtonEventArgs e)
+    private void OnAddRemind(object sender, RoutedEventArgs e)
     {
-        if (List.SelectedItem is not Note note)
+        // заметку выбирать заранее не обязательно: берём выделенную, иначе первую в списке
+        var note = List.SelectedItem as Note ?? _view.FirstOrDefault();
+        if (note is null)
         {
-            RemindHint.Text = "сначала выбери заметку в списке";
+            RemindHint.Text = "сначала запиши заметку";
             return;
         }
 
+        if (!ReferenceEquals(List.SelectedItem, note)) List.SelectedItem = note;
+
         _remindTarget = note;
-        _remindDay = note.RemindAt?.Date ?? DateTime.Today;
+        var at = note.RemindAt ?? DateTime.Today.AddHours(18);
+        _remindDay = at.Date;
+        _remindTime = at.TimeOfDay;
         _month = new DateTime(_remindDay.Year, _remindDay.Month, 1);
-        RemindHint.Text = "выбери день";
+
+        var text = note.Text.Length > 34 ? note.Text[..34] + "…" : note.Text;
+        RemindHint.Text = "напомнить: " + text;
+        TimeHint.Text = "выбери день";
+        ShowRemind(true);
         CalendarHost.Visibility = Visibility.Visible;
-        TimeRow.Visibility = Visibility.Collapsed;
         BuildCalendar();
     }
 
     private void OnCancelRemind(object sender, RoutedEventArgs e)
     {
-        CalendarHost.Visibility = Visibility.Collapsed;
-        TimeRow.Visibility = Visibility.Collapsed;
         _remindTarget = null;
         RemindHint.Text = "Добавить напоминание";
+        ShowRemind(false);
+    }
+
+    /// <summary>Пока открыт выбор времени, список прячем: календарю нужно место.</summary>
+    private void ShowRemind(bool show)
+    {
+        CalendarHost.Visibility = Visibility.Collapsed;
+        TimeRow.Visibility = Visibility.Collapsed;
+        List.Visibility = show ? Visibility.Collapsed : Visibility.Visible;
+        RemindBar.IsHitTestVisible = !show;
     }
 
     private void OnSetRemind(object sender, RoutedEventArgs e) => ApplyRemind();
 
-    private void OnRemindKey(object sender, KeyEventArgs e)
+    private void OnTimeEarlier(object sender, RoutedEventArgs e) => ShiftTime(-30);
+
+    private void OnTimeLater(object sender, RoutedEventArgs e) => ShiftTime(30);
+
+    private void ShiftTime(int minutes)
     {
-        if (e.Key == Key.Enter)
-        {
-            ApplyRemind();
-            e.Handled = true;
-        }
+        var next = _remindTime + TimeSpan.FromMinutes(minutes);
+        if (next < TimeSpan.Zero) next = TimeSpan.Zero;
+        if (next >= TimeSpan.FromDays(1)) next = new TimeSpan(23, 30, 0);
+        _remindTime = next;
+        RemindTime.Text = $"{_remindTime.Hours:00}:{_remindTime.Minutes:00}";
     }
 
     private void ApplyRemind()
@@ -187,21 +209,15 @@ public partial class NotesPanel : UserControl
         var note = _remindTarget ?? List.SelectedItem as Note;
         if (note is null)
         {
-            RemindHint.Text = "сначала выбери заметку в списке";
+            RemindHint.Text = "сначала запиши заметку";
+            ShowRemind(false);
             return;
         }
 
-        var text = RemindBox.Text.Trim().Replace('.', ':');
-        if (!TimeSpan.TryParse(text, out var at))
-        {
-            TimeHint.Text = "время вида 18:30";
-            return;
-        }
-
-        var when = _remindDay.Date + at;
+        var when = _remindDay.Date + _remindTime;
         if (when <= DateTime.Now)
         {
-            TimeHint.Text = "это время уже прошло";
+            TimeHint.Text = $"{_remindDay:dd.MM} это время уже прошло";
             return;
         }
 
@@ -252,10 +268,10 @@ public partial class NotesPanel : UserControl
             Put(new TextBlock
             {
                 Text = names[c],
-                FontSize = 9.5,
+                FontSize = 9,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Foreground = Theme.DimBrush,
-                Margin = new Thickness(0, 0, 0, 4),
+                Margin = new Thickness(0, 0, 0, 2),
             }, 0, c);
 
         var offset = ((int)_month.DayOfWeek + 6) % 7;
@@ -267,29 +283,17 @@ public partial class NotesPanel : UserControl
             var marked = NotesStore.Notes.Any(n => n.RemindAt?.Date == date);
             var selected = _remindDay.Date == date;
 
-            var content = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
-            content.Children.Add(new TextBlock
-            {
-                Text = day.ToString(),
-                FontSize = 11.5,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Foreground = selected ? Theme.AccentBrush : Theme.TextBrush,
-                FontWeight = marked ? FontWeights.SemiBold : FontWeights.Normal,
-            });
-            if (marked)
-                content.Children.Add(new System.Windows.Shapes.Ellipse
-                {
-                    Width = 4,
-                    Height = 4,
-                    Margin = new Thickness(0, 1, 0, 0),
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    Fill = Theme.AccentBrush,
-                });
-
             var button = new Button
             {
-                Content = content,
-                Padding = new Thickness(2, 3, 2, 3),
+                Content = new TextBlock
+                {
+                    Text = day.ToString(),
+                    FontSize = 10.5,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Foreground = selected ? Theme.AccentBrush : Theme.TextBrush,
+                    FontWeight = marked ? FontWeights.SemiBold : FontWeights.Normal,
+                },
+                Padding = new Thickness(2, 1, 2, 1),
                 BorderThickness = new Thickness(0),
                 Cursor = Cursors.Hand,
                 Background = selected ? Theme.CardHoverBrush : Brushes.Transparent,
@@ -312,9 +316,7 @@ public partial class NotesPanel : UserControl
         _remindDay = date;
         CalendarHost.Visibility = Visibility.Collapsed;
         TimeRow.Visibility = Visibility.Visible;
+        RemindTime.Text = $"{_remindTime.Hours:00}:{_remindTime.Minutes:00}";
         TimeHint.Text = $"{date:dd.MM}, во сколько?";
-        if (string.IsNullOrWhiteSpace(RemindBox.Text)) RemindBox.Text = "18:00";
-        RemindBox.Focus();
-        RemindBox.SelectAll();
     }
 }
