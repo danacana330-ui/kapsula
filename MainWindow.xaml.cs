@@ -140,6 +140,12 @@ public partial class MainWindow : Window
             _watchTimer.Tick += (_, _) => Watch();
             _watchTimer.Start();
 
+            // яркость меняют с клавиш или из Windows — показываем плашку, как у громкости
+            BrightnessService.Watch(percent => Dispatcher.BeginInvoke(() =>
+                ShowOsd("\uE706", "Яркость", $"{percent}%")));
+
+            if (_settings.ScreenBrightness < 100) ScreenBrightness.Set(_settings.ScreenBrightness);
+
             _waveTimer.Tick += (_, _) => UpdateLiquidEdge();
             _waveTimer.Start();
 

@@ -224,6 +224,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        Services.ScreenBrightness.Restore();
         MiniRuntime.Server.Stop();
         _tray?.Dispose();
         _mutex?.Dispose();

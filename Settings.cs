@@ -42,6 +42,8 @@ public sealed class AppSettings
     public string AiServerModel { get; set; } = "";
     public string WeatherCity { get; set; } = "Москва";
     public int VolumeStep { get; set; } = 2;
+    /// <summary>Яркость экрана в процентах: подсветка или, если панель её не даёт, программное затемнение.</summary>
+    public int ScreenBrightness { get; set; } = 100;
     public bool ShowOsd { get; set; } = true;
     public bool RecordSystemAudio { get; set; } = true;
     public bool SummaryEnabled { get; set; } = true;
