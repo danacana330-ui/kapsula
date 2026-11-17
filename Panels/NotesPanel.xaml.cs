@@ -13,6 +13,8 @@ public partial class NotesPanel : UserControl
 
     private readonly ObservableCollection<Note> _view = new();
     private string _folder = NotesStore.DefaultFolder;
+    private DateTime _month = new(DateTime.Today.Year, DateTime.Today.Month, 1);
+    private DateTime? _dayFilter;
 
     public NotesPanel()
     {
@@ -26,10 +28,12 @@ public partial class NotesPanel : UserControl
     {
         _view.Clear();
         foreach (var note in NotesStore.Notes)
-            if (note.Folder == _folder)
+            if (note.Folder == _folder && (_dayFilter is null || note.RemindAt?.Date == _dayFilter.Value.Date))
                 _view.Add(note);
 
-        Counter.Text = _view.Count == 0 ? "" : $"{_view.Count} шт.";
+        Counter.Text = _dayFilter is null
+            ? _view.Count == 0 ? "" : $"{_view.Count} шт."
+            : $"{_dayFilter:dd.MM} · {_view.Count} шт.";
         BuildFolders();
     }
 
@@ -160,4 +164,111 @@ public partial class NotesPanel : UserControl
     }
 
     private void OnBack(object sender, RoutedEventArgs e) => Back?.Invoke();
+
+    // ── календарь ────────────────────────────────────────────────────────────
+
+    private void OnToggleCalendar(object sender, RoutedEventArgs e)
+    {
+        var show = CalendarHost.Visibility != Visibility.Visible;
+        CalendarHost.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        if (show)
+        {
+            BuildCalendar();
+            return;
+        }
+
+        _dayFilter = null;
+        Refresh();
+    }
+
+    private void OnPrevMonth(object sender, RoutedEventArgs e)
+    {
+        _month = _month.AddMonths(-1);
+        BuildCalendar();
+    }
+
+    private void OnNextMonth(object sender, RoutedEventArgs e)
+    {
+        _month = _month.AddMonths(1);
+        BuildCalendar();
+    }
+
+    private void BuildCalendar()
+    {
+        MonthTitle.Text = _month.ToString("MMMM yyyy", new System.Globalization.CultureInfo("ru-RU"));
+
+        CalendarGrid.Children.Clear();
+        CalendarGrid.ColumnDefinitions.Clear();
+        CalendarGrid.RowDefinitions.Clear();
+        for (var c = 0; c < 7; c++)
+            CalendarGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        for (var r = 0; r < 7; r++)
+            CalendarGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        var names = new[] { "пн", "вт", "ср", "чт", "пт", "сб", "вс" };
+        for (var c = 0; c < 7; c++)
+            Put(new TextBlock
+            {
+                Text = names[c],
+                FontSize = 9.5,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Foreground = Theme.DimBrush,
+                Margin = new Thickness(0, 0, 0, 4),
+            }, 0, c);
+
+        var offset = ((int)_month.DayOfWeek + 6) % 7;
+        var days = DateTime.DaysInMonth(_month.Year, _month.Month);
+        for (var day = 1; day <= days; day++)
+        {
+            var date = new DateTime(_month.Year, _month.Month, day);
+            var index = offset + day - 1;
+            var marked = NotesStore.Notes.Any(n => n.RemindAt?.Date == date);
+            var selected = _dayFilter?.Date == date;
+
+            var content = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
+            content.Children.Add(new TextBlock
+            {
+                Text = day.ToString(),
+                FontSize = 11.5,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Foreground = selected ? Theme.AccentBrush : Theme.TextBrush,
+                FontWeight = marked ? FontWeights.SemiBold : FontWeights.Normal,
+            });
+            if (marked)
+                content.Children.Add(new System.Windows.Shapes.Ellipse
+                {
+                    Width = 4,
+                    Height = 4,
+                    Margin = new Thickness(0, 1, 0, 0),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Fill = Theme.AccentBrush,
+                });
+
+            var button = new Button
+            {
+                Content = content,
+                Padding = new Thickness(2, 3, 2, 3),
+                BorderThickness = new Thickness(0),
+                Cursor = Cursors.Hand,
+                Background = selected ? Theme.CardHoverBrush : Brushes.Transparent,
+            };
+            button.Click += (_, _) => PickDay(date);
+
+            Put(button, index / 7 + 1, index % 7);
+        }
+    }
+
+    private void Put(UIElement element, int row, int column)
+    {
+        Grid.SetRow(element, row);
+        Grid.SetColumn(element, column);
+        CalendarGrid.Children.Add(element);
+    }
+
+    private void PickDay(DateTime date)
+    {
+        _dayFilter = _dayFilter?.Date == date ? null : date;
+        BuildCalendar();
+        Refresh();
+    }
 }
