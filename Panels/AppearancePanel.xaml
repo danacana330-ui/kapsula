@@ -3,6 +3,87 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:Kapsula"
              FontFamily="{x:Static local:Theme.Font}">
+    <UserControl.Resources>
+        <!-- карточка-переключатель: подпись слева, тумблер справа -->
+        <Style x:Key="SwitchCard" TargetType="CheckBox">
+            <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Border x:Name="Bd" CornerRadius="14" Padding="13,11"
+                                Background="Transparent"
+                                BorderBrush="{DynamicResource Stroke}" BorderThickness="1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter VerticalAlignment="Center"/>
+                                <Grid Grid.Column="1" Width="36" Height="20"
+                                      VerticalAlignment="Center" Margin="10,0,0,0" Background="Transparent">
+                                    <Border x:Name="Pill" CornerRadius="10" Background="{DynamicResource Hover}">
+                                        <Border x:Name="Knob" Width="14" Height="14" CornerRadius="7"
+                                                Background="{DynamicResource Text}"
+                                                HorizontalAlignment="Left" Margin="3,0"/>
+                                    </Border>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Pill" Property="Background" Value="{x:Static local:Theme.AccentGradient}"/>
+                                <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- то же, но теснее — для сетки плиток на главной -->
+        <Style x:Key="SwitchChip" TargetType="CheckBox" BasedOn="{StaticResource SwitchCard}">
+            <Setter Property="Margin" Value="0,0,8,8"/>
+            <Setter Property="MinWidth" Value="150"/>
+        </Style>
+
+        <!-- обводка-карточка вокруг поля или ползунка -->
+        <Style x:Key="SettingCard" TargetType="Border">
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Stroke}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="13,11"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+        </Style>
+
+        <Style x:Key="CardLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+        </Style>
+
+        <!-- строка раздела в списке слева -->
+        <Style x:Key="SectionButton" TargetType="Button">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="11"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -52,136 +133,168 @@
                     <Grid>
                         <!-- ── Капсула ── -->
                         <StackPanel x:Name="SecCapsule">
-                            <CheckBox x:Name="AutostartBox" Content="Запускать вместе с Windows"
-                                      Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,10"/>
-                            <CheckBox x:Name="HoverBox" Content="Раскрывать при наведении"
-                                      Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,10"/>
-                            <CheckBox x:Name="KeepBox" Content="Не сворачивать, когда уводишь курсор"
-                                      Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,10"/>
-                            <CheckBox x:Name="SecondsBox" Content="Показывать секунды на часах"
-                                      Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,10"/>
-                            <CheckBox x:Name="OsdBox" Content="Показывать громкость и CapsLock"
-                                      Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,10"/>
-                            <CheckBox x:Name="FullscreenBox" Content="Прятать в полноэкранных видео и играх"
-                                      Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,10"/>
-                            <CheckBox x:Name="CursorBox" Content="Маскот следит за курсором"
-                                      Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,10"/>
-                            <CheckBox x:Name="MotionBox" Content="Меньше анимации"
-                                      Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,12"/>
+                            <CheckBox x:Name="AutostartBox" Style="{StaticResource SwitchCard}"
+                                      Content="Запускать вместе с Windows"/>
+                            <CheckBox x:Name="HoverBox" Style="{StaticResource SwitchCard}"
+                                      Content="Раскрывать при наведении"/>
+                            <CheckBox x:Name="KeepBox" Style="{StaticResource SwitchCard}"
+                                      Content="Не сворачивать, когда уводишь курсор"/>
+                            <CheckBox x:Name="SecondsBox" Style="{StaticResource SwitchCard}"
+                                      Content="Показывать секунды на часах"/>
+                            <CheckBox x:Name="OsdBox" Style="{StaticResource SwitchCard}"
+                                      Content="Показывать громкость и CapsLock"/>
+                            <CheckBox x:Name="FullscreenBox" Style="{StaticResource SwitchCard}"
+                                      Content="Прятать в полноэкранных видео и играх"/>
+                            <CheckBox x:Name="CursorBox" Style="{StaticResource SwitchCard}"
+                                      Content="Маскот следит за курсором"/>
+                            <CheckBox x:Name="MotionBox" Style="{StaticResource SwitchCard}"
+                                      Content="Меньше анимации"/>
 
-                            <TextBlock Text="Размер острова" FontSize="11" Margin="0,0,0,4"
-                                       Foreground="{x:Static local:Theme.DimBrush}"/>
-                            <Grid Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <Slider x:Name="ScaleSlider" Minimum="100" Maximum="199"
-                                        SmallChange="1" LargeChange="10" Value="100" VerticalAlignment="Center"/>
-                                <TextBlock x:Name="ScaleValue" Grid.Column="1" Text="100 %" FontSize="11.5"
-                                           MinWidth="44" TextAlignment="Right" VerticalAlignment="Center"
-                                           Foreground="{x:Static local:Theme.DimBrush}"/>
-                            </Grid>
+                            <Border Style="{StaticResource SettingCard}">
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource CardLabel}" Text="Размер острова"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Slider x:Name="ScaleSlider" Minimum="100" Maximum="199"
+                                                SmallChange="1" LargeChange="10" Value="100"
+                                                VerticalAlignment="Center" Cursor="Hand"/>
+                                        <TextBlock x:Name="ScaleValue" Grid.Column="1" Text="100 %" FontSize="11.5"
+                                                   MinWidth="44" TextAlignment="Right" VerticalAlignment="Center"
+                                                   Foreground="{x:Static local:Theme.DimBrush}"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
 
-                            <TextBlock Text="Город для погоды" FontSize="11" Margin="0,0,0,6"
-                                       Foreground="{x:Static local:Theme.DimBrush}"/>
-                            <TextBox x:Name="CityBox" Style="{StaticResource InputBox}" Margin="0,0,0,12"/>
+                            <Border Style="{StaticResource SettingCard}">
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource CardLabel}" Text="Город для погоды"/>
+                                    <TextBox x:Name="CityBox" Style="{StaticResource InputBox}"/>
+                                </StackPanel>
+                            </Border>
 
                             <Button Style="{StaticResource GhostButton}" Content="Создать ярлык на рабочем столе"
-                                    HorizontalAlignment="Left" Click="OnMakeShortcut" x:Name="ShortcutButton"/>
+                                    HorizontalAlignment="Left" Click="OnMakeShortcut" x:Name="ShortcutButton"
+                                    Margin="0,2,0,0"/>
                         </StackPanel>
 
                         <!-- ── Внешний вид ── -->
                         <StackPanel x:Name="SecLook" Visibility="Collapsed">
-                            <CheckBox x:Name="LightBox" Content="Светлая тема"
-                                      Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,10"/>
-                            <CheckBox x:Name="RimBox" Content="Светлая кромка"
-                                      Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,10"/>
-                            <CheckBox x:Name="ShadowBox" Content="Тень под капсулой"
-                                      Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,10"/>
-                            <CheckBox x:Name="PrivacyBox" Content="Точки микрофона и камеры"
-                                      Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,12"/>
+                            <CheckBox x:Name="LightBox" Style="{StaticResource SwitchCard}"
+                                      Content="Светлая тема"/>
+                            <CheckBox x:Name="RimBox" Style="{StaticResource SwitchCard}"
+                                      Content="Светлая кромка"/>
+                            <CheckBox x:Name="ShadowBox" Style="{StaticResource SwitchCard}"
+                                      Content="Тень под капсулой"/>
+                            <CheckBox x:Name="PrivacyBox" Style="{StaticResource SwitchCard}"
+                                      Content="Точки микрофона и камеры"/>
 
-                            <TextBlock Text="Шрифт" FontSize="11" Margin="0,0,0,6"
-                                       Foreground="{x:Static local:Theme.DimBrush}"/>
-                            <ComboBox x:Name="FontBox" FontSize="12" Margin="0,0,0,12"
-                                      VerticalContentAlignment="Center"/>
+                            <Border Style="{StaticResource SettingCard}">
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource CardLabel}" Text="Шрифт"/>
+                                    <ComboBox x:Name="FontBox" FontSize="12" VerticalContentAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
 
-                            <TextBlock Text="Что показывать на главной" FontSize="11" Margin="0,0,0,8"
+                            <TextBlock Text="Что показывать на главной" FontSize="11" Margin="2,4,0,8"
                                        Foreground="{x:Static local:Theme.DimBrush}"/>
                             <WrapPanel x:Name="TilesPanel"/>
                         </StackPanel>
 
                         <!-- ── Сводка ── -->
                         <StackPanel x:Name="SecSummary" Visibility="Collapsed">
-                            <CheckBox x:Name="SummaryBox" Content="Показывать утреннюю сводку"
-                                      Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,12"/>
-                            <TextBlock Text="Во сколько показывать" FontSize="11" Margin="0,0,0,6"
-                                       Foreground="{x:Static local:Theme.DimBrush}"/>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                <Button Style="{StaticResource IconButton}" Click="OnSummaryEarlier"
-                                        ToolTip="На полчаса раньше">
-                                    <TextBlock Text="&#xE76B;" FontFamily="Segoe MDL2 Assets" FontSize="11"/>
-                                </Button>
-                                <TextBlock x:Name="SummaryTimeText" Text="09:00" FontSize="14"
-                                           FontWeight="SemiBold" MinWidth="64" TextAlignment="Center"
-                                           VerticalAlignment="Center"
-                                           Foreground="{x:Static local:Theme.TextBrush}"/>
-                                <Button Style="{StaticResource IconButton}" Click="OnSummaryLater"
-                                        ToolTip="На полчаса позже">
-                                    <TextBlock Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="11"/>
-                                </Button>
-                            </StackPanel>
-                            <TextBlock Text="Шаг — полчаса" FontSize="10.5"
-                                       Foreground="{x:Static local:Theme.DimBrush}"/>
+                            <CheckBox x:Name="SummaryBox" Style="{StaticResource SwitchCard}"
+                                      Content="Показывать утреннюю сводку"/>
+
+                            <Border Style="{StaticResource SettingCard}">
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource CardLabel}" Text="Во сколько показывать"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Style="{StaticResource IconButton}" Click="OnSummaryEarlier"
+                                                ToolTip="На полчаса раньше">
+                                            <TextBlock Text="&#xE76B;" FontFamily="Segoe MDL2 Assets" FontSize="11"/>
+                                        </Button>
+                                        <TextBlock x:Name="SummaryTimeText" Text="09:00" FontSize="14"
+                                                   FontWeight="SemiBold" MinWidth="64" TextAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{x:Static local:Theme.TextBrush}"/>
+                                        <Button Style="{StaticResource IconButton}" Click="OnSummaryLater"
+                                                ToolTip="На полчаса позже">
+                                            <TextBlock Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="11"/>
+                                        </Button>
+                                    </StackPanel>
+                                    <TextBlock Text="Шаг — полчаса" FontSize="10.5" Margin="0,6,0,0"
+                                               Foreground="{x:Static local:Theme.DimBrush}"/>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
 
                         <!-- ── ИИ ── -->
                         <StackPanel x:Name="SecAi" Visibility="Collapsed">
-                            <TextBlock Text="Адрес сервера" FontSize="11" Margin="0,0,0,6"
-                                       Foreground="{x:Static local:Theme.DimBrush}"/>
-                            <TextBox x:Name="AiBox" Style="{StaticResource InputBox}" Margin="0,0,0,12"/>
+                            <Border Style="{StaticResource SettingCard}">
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource CardLabel}" Text="Адрес сервера"/>
+                                    <TextBox x:Name="AiBox" Style="{StaticResource InputBox}"/>
+                                </StackPanel>
+                            </Border>
 
-                            <TextBlock x:Name="AiKeyTitle" Text="Ключ, если нужен" FontSize="11" Margin="0,0,0,6"
-                                       Foreground="{x:Static local:Theme.DimBrush}"/>
-                            <TextBox x:Name="AiKeyBox" Style="{StaticResource InputBox}" Margin="0,0,0,12"/>
+                            <Border Style="{StaticResource SettingCard}">
+                                <StackPanel>
+                                    <TextBlock x:Name="AiKeyTitle" Style="{StaticResource CardLabel}" Text="Ключ, если нужен"/>
+                                    <TextBox x:Name="AiKeyBox" Style="{StaticResource InputBox}"/>
+                                </StackPanel>
+                            </Border>
 
-                            <TextBlock x:Name="AiModelTitle" Text="Имя модели" FontSize="11" Margin="0,0,0,6"
-                                       Foreground="{x:Static local:Theme.DimBrush}"/>
-                            <TextBox x:Name="AiModelBox" Style="{StaticResource InputBox}"/>
+                            <Border Style="{StaticResource SettingCard}">
+                                <StackPanel>
+                                    <TextBlock x:Name="AiModelTitle" Style="{StaticResource CardLabel}" Text="Имя модели"/>
+                                    <TextBox x:Name="AiModelBox" Style="{StaticResource InputBox}"/>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
 
                         <!-- ── Данные ── -->
                         <StackPanel x:Name="SecData" Visibility="Collapsed">
-                            <TextBlock Text="История буфера, часов (0 — не чистить)" FontSize="11" Margin="0,0,0,6"
-                                       Foreground="{x:Static local:Theme.DimBrush}"/>
-                            <TextBox x:Name="CleanupBox" Style="{StaticResource InputBox}" Width="90"
-                                     HorizontalAlignment="Left" TextAlignment="Center" Margin="0,0,0,12"/>
+                            <Border Style="{StaticResource SettingCard}">
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource CardLabel}" Text="История буфера, часов (0 — не чистить)"/>
+                                    <TextBox x:Name="CleanupBox" Style="{StaticResource InputBox}" Width="90"
+                                             HorizontalAlignment="Left" TextAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
 
-                            <CheckBox x:Name="SkipPwdBox" Content="Не запоминать пароли в буфере"
-                                      Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,10"/>
-                            <CheckBox x:Name="ToastBox" Content="Уведомление при копировании"
-                                      Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,10"/>
-                            <CheckBox x:Name="RecAudioBox" Content="Записывать звук системы"
-                                      Foreground="{x:Static local:Theme.TextBrush}" Margin="0,0,0,12"/>
+                            <CheckBox x:Name="SkipPwdBox" Style="{StaticResource SwitchCard}"
+                                      Content="Не запоминать пароли в буфере"/>
+                            <CheckBox x:Name="ToastBox" Style="{StaticResource SwitchCard}"
+                                      Content="Уведомление при копировании"/>
+                            <CheckBox x:Name="RecAudioBox" Style="{StaticResource SwitchCard}"
+                                      Content="Записывать звук системы"/>
 
-                            <TextBlock Text="Папка для записей экрана" FontSize="11" Margin="0,0,0,6"
-                                       Foreground="{x:Static local:Theme.DimBrush}"/>
-                            <Grid Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBox x:Name="RecBox" Style="{StaticResource InputBox}"/>
-                                <Button Grid.Column="1" Style="{StaticResource GhostButton}" Content="Выбрать"
-                                        Click="OnPickFolder" Margin="8,0,0,0"/>
-                            </Grid>
+                            <Border Style="{StaticResource SettingCard}">
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource CardLabel}" Text="Папка для записей экрана"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="RecBox" Style="{StaticResource InputBox}"/>
+                                        <Button Grid.Column="1" Style="{StaticResource GhostButton}" Content="Выбрать"
+                                                Click="OnPickFolder" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
 
-                            <TextBlock Text="Горячие клавиши" FontSize="11" Margin="0,4,0,6"
-                                       Foreground="{x:Static local:Theme.DimBrush}"/>
-                            <TextBlock FontSize="11.5" LineHeight="19" TextWrapping="Wrap"
-                                       Foreground="{x:Static local:Theme.TextBrush}"
-                                       Text="Alt+Space — запуск программ и поиск&#10;Alt+S — снимок области&#10;Alt+R — запись экрана&#10;Ctrl+F в снимке — найти в интернете"/>
+                            <Border Style="{StaticResource SettingCard}">
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource CardLabel}" Text="Горячие клавиши"/>
+                                    <TextBlock FontSize="11.5" LineHeight="19" TextWrapping="Wrap"
+                                               Foreground="{x:Static local:Theme.TextBrush}"
+                                               Text="Alt+Space — запуск программ и поиск&#10;Alt+S — снимок области&#10;Alt+R — запись экрана&#10;Ctrl+F в снимке — найти в интернете"/>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </Grid>
                 </ScrollViewer>

@@ -79,6 +79,7 @@ public partial class AppearancePanel : UserControl
                 HorizontalContentAlignment = HorizontalAlignment.Left,
                 BorderThickness = new Thickness(0),
                 Cursor = System.Windows.Input.Cursors.Hand,
+                Style = (Style)FindResource("SectionButton"),
             };
             button.Click += (_, _) => Select(id);
             SectionBar.Children.Add(button);
@@ -121,9 +122,7 @@ public partial class AppearancePanel : UserControl
             {
                 Content = def.Title,
                 Tag = def.Id,
-                Foreground = Theme.TextBrush,
-                Margin = new Thickness(0, 0, 12, 8),
-                MinWidth = 92,
+                Style = (Style)FindResource("SwitchChip"),
             };
             check.Checked += OnTiles;
             check.Unchecked += OnTiles;

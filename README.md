@@ -6,7 +6,7 @@
 
 ## Скачать
 
-Готовый файл — в разделе [Releases](../../releases/latest): `Kapsula-2.0.1.zip`.
+Готовый файл — в разделе [Releases](../../releases/latest): `Kapsula-2.0.2.zip`.
 Распакуйте архив и запустите `Kapsula.exe`. Устанавливать ничего не нужно, .NET 8 уже внутри.
 
 При первом запуске SmartScreen покажет «Windows защитила ваш компьютер» — нажмите
@@ -50,7 +50,7 @@
 ```
 dotnet publish -c Release -r win-x64 --self-contained true ^
   -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true ^
-  -p:EnableCompressionInSingleFile=true -o release\Kapsula-2.0.1
+  -p:EnableCompressionInSingleFile=true -o release\Kapsula-2.0.2
 ```
 
 Нужен .NET 8 SDK и Windows 10/11.
