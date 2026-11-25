@@ -364,12 +364,13 @@ public partial class AiPanel : UserControl
         _bubbles.Add(answer);
         ChatScroll.ScrollToEnd();
 
-        // простые команды понимаем сами, без модели — быстро и офлайн
-        if (QuickCommands.TryHandle(text, out var quickReply))
+        // действия по капсуле делаем сами — быстро и офлайн, без модели
+        var quick = await QuickCommands.TryHandleAsync(text);
+        if (quick.Handled)
         {
-            answer.Text = quickReply;
+            answer.Text = quick.Reply;
             answer.Meta = "команда";
-            _history.Add(new AiMessage { Role = "assistant", Content = quickReply });
+            _history.Add(new AiMessage { Role = "assistant", Content = quick.Reply });
             PersistChat();
             return;
         }

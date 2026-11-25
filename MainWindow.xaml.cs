@@ -290,20 +290,6 @@ public partial class MainWindow : Window
             new CubicEase { EasingMode = EasingMode.EaseOut });
     }
 
-    /// <summary>Колесо над капсулой: вверх — раскрыть, вниз — свернуть.</summary>
-    private void OnCapsuleWheel(object sender, MouseWheelEventArgs e)
-    {
-        e.Handled = true;
-        if (e.Delta > 0)
-        {
-            if (!_expanded) Expand();
-        }
-        else
-        {
-            if (_expanded) Collapse();
-        }
-    }
-
     public void Collapse()
     {
         if (!_expanded || _animating) return;
@@ -559,23 +545,27 @@ public partial class MainWindow : Window
         _osd.ShowOsd(glyph, title, value, sticky);
     }
 
-    private async void ToggleRecording()
+    private async void ToggleRecording() => await CommandRecordAsync();
+
+    /// <summary>То же, что Alt+R, но с ответом для чата и голоса.</summary>
+    public async Task<string> CommandRecordAsync()
     {
         if (_recorder.IsRecording)
         {
             await _recorder.StopAsync();
             ShowOsd("\uE7C8", "Запись экрана", "сохранена");
-            (Application.Current as App)?.Notify("Запись экрана", _recorder.LastFile ?? "");
+            var file = _recorder.LastFile ?? "";
+            (Application.Current as App)?.Notify("Запись экрана", file);
+            return file.Length > 0 ? $"Запись остановлена: {file}" : "Запись остановлена.";
         }
-        else
-        {
-            var folder = string.IsNullOrWhiteSpace(_settings.RecordFolder)
-                ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "Kapsula")
-                : _settings.RecordFolder;
-            _recorder.Start(folder, _settings.RecordSystemAudio);
-            ShowOsd("\uE7C8", "Запись экрана", "идёт");
-            (Application.Current as App)?.Notify("Запись экрана", "Пишу экран. Alt+R — остановить");
-        }
+
+        var folder = string.IsNullOrWhiteSpace(_settings.RecordFolder)
+            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "Kapsula")
+            : _settings.RecordFolder;
+        _recorder.Start(folder, _settings.RecordSystemAudio);
+        ShowOsd("\uE7C8", "Запись экрана", "идёт");
+        (Application.Current as App)?.Notify("Запись экрана", "Пишу экран. Alt+R — остановить");
+        return $"Пишу экран в {folder}. Скажи «стоп запись», когда хватит.";
     }
 
     // ── панели ───────────────────────────────────────────────────────────────
@@ -722,6 +712,80 @@ public partial class MainWindow : Window
         App.Settings.LightTheme = light;
         App.Settings.Save();
         ApplySettings();
+    }
+
+    // ── действия по просьбе из чата ──────────────────────────────────────────
+
+    /// <summary>Погода одной строкой — для чата и голоса.</summary>
+    public async Task<string> CommandWeatherAsync()
+    {
+        _weather = await _weatherService.GetAsync(_settings.WeatherCity);
+        var w = _weather;
+        if (w is null) return "Погоду не получил — похоже, нет сети.";
+        var city = string.IsNullOrWhiteSpace(w.City) ? _settings.WeatherCity : w.City;
+        var line = $"{city}: {Math.Round(w.Temp)}°, {w.Description.Trim().ToLowerInvariant()}, ветер {Math.Round(w.Wind)} м/с";
+        if (w.Days.Count > 0)
+        {
+            var days = string.Join(", ", w.Days.Take(3).Select(d =>
+                $"{d.Day} {Math.Round(d.Min)}…{Math.Round(d.Max)}°"));
+            line += "\n" + days;
+        }
+        return line;
+    }
+
+    /// <summary>Музыка: пауза, следующий, предыдущий — для чата и голоса.</summary>
+    public async Task<string> CommandMusicAsync(string action)
+    {
+        try
+        {
+            if (action == "next" || action == "prev")
+            {
+                if (_current is null || !_current.HasSession)
+                {
+                    var ready = await PreparePlayerAsync();
+                    if (!ready) return "Ничего не играет, и плеер не открылся.";
+                }
+                if (action == "next") await _media.NextAsync();
+                else await _media.PreviousAsync();
+                await Task.Delay(200);
+                await UpdateMediaAsync();
+                var now = _current?.Title ?? "";
+                return now.Length > 0 ? $"Играет: {now}" : "Переключил трек.";
+            }
+
+            await OnPlayPauseCommandAsync();
+            var title = _current?.Title ?? "";
+            return title.Length > 0 ? $"Сейчас: {title}" : "Готово.";
+        }
+        catch (Exception ex)
+        {
+            return "Музыка не отвечает: " + ex.Message;
+        }
+    }
+
+    private async Task OnPlayPauseCommandAsync()
+    {
+        if (_current?.App == "Kapsula")
+        {
+            MusicPlayer.Toggle();
+            await Task.Delay(120);
+            await UpdateMediaAsync();
+            return;
+        }
+
+        if (_current is not null && _current.HasSession)
+        {
+            await _media.PlayPauseAsync();
+            await Task.Delay(150);
+            await UpdateMediaAsync();
+            return;
+        }
+
+        var ready = await PreparePlayerAsync();
+        if (!ready) return;
+        await _media.PlayPauseAsync();
+        await Task.Delay(150);
+        await UpdateMediaAsync();
     }
 
     // ── обновление данных ────────────────────────────────────────────────────
