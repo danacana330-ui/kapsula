@@ -15,6 +15,8 @@ public partial class OsdWindow : Window
         Left = (SystemParameters.PrimaryScreenWidth - Width) / 2;
         Top = 58;
         Opacity = 0;
+        Cursor = System.Windows.Input.Cursors.Hand;
+        MouseLeftButtonDown += (_, _) => HideNow();
         _hide.Tick += (_, _) =>
         {
             _hide.Stop();
